@@ -31,6 +31,11 @@ Funcionalidades que debe ofrecer la aplicación (primera iteración).
 | RF-25 | Panel admin separado | Aplicación Svelte independiente que consume la API REST del backend, con login propio y aislado (AUTH-10, ADR-005). |
 | RF-26 | Bootstrap de admin | El backend crea el administrador inicial desde variables `ADMIN_INITIAL_*` en el primer arranque y fuerza el cambio de contraseña en el primer login (AUTH-11, ADR-006). |
 | RF-27 | Stack definido | SvelteKit (tienda), Svelte SPA (admin), FastAPI REST, PostgreSQL, Podman con imágenes públicas de AWS ECR Public (ADR-004). |
+| RF-28 | Perfil y avatar | El usuario autenticado edita su perfil (display-name) y cambia su avatar. |
+| RF-29 | Cambio de contraseña logueado | Con contraseña actual válida + nueva según política; invalida refresh tokens activos. |
+| RF-30 | Edición y baja de pedido | El comprador edita o elimina sus pedidos solo mientras no fueron confirmados como orden de compra (RN-18/RN-19). |
+| RF-31 | Reactivación de cuenta | Login con credenciales válidas sobre cuenta dada de baja ofrece reactivación: mismo userId e historial íntegro (UC-C10, ADR-002). |
+| RF-32 | Vendedor gestiona perfiles | Busca perfiles y consulta pedidos por usuario; puede editar datos de perfil (no rol ni contraseña). |
 
 > Trazabilidad: cada requisito debería rastrearse hasta su implementación y
 > sus casos de prueba (ver `testing/`).

@@ -4,15 +4,21 @@ Define las interacciones entre los actores y el sistema para lograr un
 objetivo concreto.
 
 ---
-## Documentos esperados
+## Índice de casos de uso
 
-Un archivo por caso de uso o grupo de casos relacionados, con el actor, la
-precondición, el flujo principal y los flujos alternativos:
+| Archivo | Actor | Estado |
+| ------- | ----- | ------ |
+| `visitante-anonimo.md` | Visitante anónimo | Especificado (UC-A01..A10) |
+| `cuenta.md` | Comprador y Vendedor (autogestión) | Especificado (UC-C01..C10; UC-C04 diferido por AUTH-06) |
+| `comprador.md` | Comprador | Especificado (UC-B01..B10) |
+| `vendedor.md` | Vendedor | Especificado (UC-V01..V09); superficie por confirmar |
+| `administrador.md` | Administrador | Reservado: se define en el proyecto del panel admin |
 
-| Archivo | Qué contiene |
-| ------- | ------------ |
-| `<caso-de-uso>.md` | Un caso de uso o grupo relacionado (ej: `users.md`, `recipes.md`). |
-| `README.md` | Este índice: lista los casos de uso y su estado. |
+## Convenciones
+
+- Un archivo por actor o grupo de casos relacionados, con actor,
+  precondición, flujo principal y flujos alternativos.
+- IDs estables (`UC-<actor><n>`) para trazabilidad con `docs/testing/`.
 
 ## Consejos
 
