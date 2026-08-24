@@ -28,7 +28,9 @@ Funcionalidades que debe ofrecer la aplicación (primera iteración).
 | RF-22 | Compartir producto | El usuario puede compartir un producto (enlace público con slug). Sin seguimiento entre usuarios en el MVP (RN-22). |
 | RF-23 | Unidades de venta | Cada producto define su unidad de venta del registro abierto (unidades, cm/m, kg, ...) y las cantidades se expresan en esa unidad (RN-23). |
 | RF-24 | Catálogo sembrado | El catálogo arranca con 2–3 productos modelo; el staff crea el resto (Vendedor: alta; Admin: CRUD completo) (RN-24). |
-| RF-25 | Panel admin separado | Aplicación de administración como proyecto independiente con login y cookies propios, consumiendo la misma base de datos (AUTH-10). |
+| RF-25 | Panel admin separado | Aplicación Svelte independiente que consume la API REST del backend, con login propio y aislado (AUTH-10, ADR-005). |
+| RF-26 | Bootstrap de admin | El backend crea el administrador inicial desde variables `ADMIN_INITIAL_*` en el primer arranque y fuerza el cambio de contraseña en el primer login (AUTH-11, ADR-006). |
+| RF-27 | Stack definido | SvelteKit (tienda), Svelte SPA (admin), FastAPI REST, PostgreSQL, Podman con imágenes públicas de AWS ECR Public (ADR-004). |
 
 > Trazabilidad: cada requisito debería rastrearse hasta su implementación y
 > sus casos de prueba (ver `testing/`).

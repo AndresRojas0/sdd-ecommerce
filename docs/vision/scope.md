@@ -32,12 +32,13 @@
 3. ~~¿El pedido se genera directo o mediante un carrito previo?~~ → **Con carrito**: previsualizable antes de generar el pedido (RN-12).
 4. ~~¿Quién confirma un pedido?~~ → **Admin o Vendedor** confirman y generan la orden de compra (RN-18).
 5. ~~Recuperación de pedidos del usuario que vuelve~~ → **Reactivación nativa** (ADR-002).
-6. ~~Autenticación~~ → **JWT con cookies** en frontend; panel admin como proyecto separado con login propio (ADR-003).
+6. ~~Autenticación~~ → **JWT con cookies** en frontend; panel admin como SPA Svelte independiente con login propio (ADR-003/005).
+7. ~~Stack tecnológico~~ → **SvelteKit + FastAPI + PostgreSQL + REST**, Podman con imágenes públicas AWS (ADR-004); bootstrap de admin por env (ADR-006).
 
 ## Decisiones abiertas
 
 1. ¿La ventana de deduplicación de visitas es fija (24 h) o configurable? (ADR-001)
-2. Stack tecnológico concreto: diferido por decisión explícita ("otro día").
+2. Algoritmo de relevancia y mecánica de descuentos (ver `architecture/04-decisions.md`).
 
 ## Límites explícitos del MVP
 

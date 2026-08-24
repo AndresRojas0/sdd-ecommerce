@@ -36,4 +36,5 @@ Especificación de roles, autenticación y autorización (tercera iteración).
 | AUTH-07 | La baja del usuario es lógica (`is_active = false`); conserva visitas, favoritos y pedidos (RN-17). |
 | AUTH-08 | Solo Admin o Vendedor confirma un pedido y genera la orden de compra (RN-18). |
 | AUTH-09 | El login del frontend se basa en **JWT con credenciales en cookies**: access token 15 min + refresh token rotativo 30 días, cookies `HttpOnly`, `Secure`, `SameSite=Lax`. Detalles y alternativas: `decisions/ADR-003-jwt-cookies-y-admin-separado.md`. |
-| AUTH-10 | El panel de Administración es un **proyecto separado** que consume la misma base de datos, con sistema de login y cookies propios y aislados del frontend. |
+| AUTH-10 | El panel de Administración es un **proyecto Svelte independiente** que consume la API REST del backend; su sistema de login y cookies es propio y aislado del frontend de tienda (ADR-005). |
+| AUTH-11 | Bootstrap del admin: en el primer arranque el backend crea el administrador inicial desde `ADMIN_INITIAL_*` (env) y **fuerza el cambio de contraseña en el primer login** (ADR-006, BOOT-01..04). |
