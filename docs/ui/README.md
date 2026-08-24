@@ -4,14 +4,15 @@ Define la experiencia de usuario: pantallas, navegación, componentes y
 sistema visual.
 
 ---
-## Documentos esperados
+## Índice de documentos UI
 
 | Archivo | Qué contiene |
 | ------- | ------------ |
-| `00-ui-overview.md` | Visión general de la interfaz, temas y modos. |
-| `01-pages.md` | Definición de pantallas, navegación y estados vacíos. |
-| `02-components.md` | Componentes reutilizables de la UI. |
-| `03-design-system.md` | Reglas visuales: paleta, tipografía, espaciado, dark mode. |
+| `DESIGN.md` | Tokens de identidad visual extraídos ("Wickes Bold Retail"): fuente de verdad de paleta, tipografía, sombras y espaciado. |
+| `00-ui-overview.md` | Visión general: estrategia de tema claro/oscuro, estructura global persistente. |
+| `01-pages.md` | Pantallas: home (hero + buscador + cards), detalle por slug, mis pedidos/favoritos, 404 temática, estados vacíos y errores. |
+| `02-components.md` | Inventario de componentes shadcn-svelte y compuestos del proyecto. |
+| `03-design-system.md` | Mapeo de DESIGN.md a variables CSS de shadcn-svelte, modo oscuro, tipografía self-hosted, skeleton rules. |
 
 ## Consejos
 
