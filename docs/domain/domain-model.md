@@ -9,14 +9,14 @@ leer código.
 | -------- | ----------- |
 | **Usuario** | Persona registrada. Definido por `email` (identidad única), `display_name`, `avatar`, `password` (hash), fecha de creación de perfil, fecha/hora de último login y `is_active` (baja lógica). Consulta, busca, filtra, guarda favoritos, genera pedidos y califica productos. |
 | **Rol** | Perfil de autorización: `Visitante anónimo`, `Comprador`, `Vendedor`, `Administrador` (ver `requirements/authentication.md`). |
-| **Producto** | Ítem del catálogo. Atributos: `título`, `slug` (SEO), `descripción`, `componentes incluidos`, `datos técnicos`, `precio`, `imagen` (0..1, nula en MVP), unidad de venta (RN-23). Pertenece a una o más categorías, puede tener etiquetas y expone contadores de visitas y de guardados. |
+| **Producto** | Ítem del catálogo. Atributos: `título`, `slug` (SEO), `descripción`, `componentes incluidos`, `datos técnicos`, `precio`, `imagen` (0..1, nula en MVP), unidad de venta (RN-23). Estado de publicación: publicado/oculto (RN-31); borrado lógico con historial (RN-32). Expone contadores de visitas (con origen, RN-08), búsquedas (RN-30) y guardados (RN-09). |
 | **Categoría** | Familia cerrada de productos (taxonomía controlada). Tiene slug propio. Ej.: `herramientas`, `electricidad`. |
 | **Etiqueta (tag)** | Término descriptivo de vocabulario abierto y dinámico. Tiene slug propio. Ej.: `inoxidable`, `hexagonal`, `tornillos`. |
 | **Unidad de medida** | Unidad de venta del producto, de registro abierto: unidades, cm/m (cables), kg (cañería por kilo), etc. Extensible sin rediseño (RN-23). |
 | **Especificación técnica** | Atributo técnico que describe al producto y es buscable. Equivale a los "datos técnicos". |
 | **Componentes incluidos** | Lista de elementos que vienen con el producto. |
 | **Favorito** | Relación entre un usuario y un producto marcado como preferido. Alimentar el contador de guardados del producto. |
-| **Visita** | Apertura del detalle de un producto por un visitante (autenticado o anónimo). Se deduplica por visitante y ventana de tiempo (ADR-001). |
+| **Visita** | Apertura del detalle de un producto por un visitante (autenticado o anónimo). Se deduplica por visitante y ventana de tiempo configurable (ADR-001) y registra su origen (directa o desde búsqueda, RN-30). |
 | **Carrito** | Borrador de orden de compra: líneas de producto con cantidades, previsualizable antes de confirmar. |
 | **Línea de pedido** | Par producto + cantidad dentro de un carrito o pedido. |
 | **Pedido** | Solicitud generada por un comprador a partir del carrito. Atributos: líneas, precio subtotal, precio total, fecha de creación, usuario creador. Tiene estado y autor (RN-26). |

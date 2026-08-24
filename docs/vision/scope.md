@@ -37,14 +37,15 @@
 
 ## Decisiones abiertas
 
-1. ¿La ventana de deduplicación de visitas es fija (24 h) o configurable? (ADR-001)
-2. Algoritmo de relevancia y mecánica de descuentos (ver `architecture/04-decisions.md`).
-3. ¿Ocultar/despublicar productos sin eliminarlos? (UC-AD10, propuesto por negocio)
-4. ¿Borrado lógico de productos con historial al eliminarlos? (UC-AD09)
+1. Algoritmo de descuentos y su mecánica (% vs. precio final, vigencia) — único criterio de orden pendiente de definición fina.
 
 ## Decisiones resueltas (adicionales)
 
-5. ~~Consolidación de pedidos~~ → **solo pedidos del mismo comprador** (RN-29).
+1. ~~Consolidación de pedidos~~ → **solo pedidos del mismo comprador** (RN-29).
+2. ~~Ventana de deduplicación de visitas~~ → **configurable** por entorno, default propuesto 24 h (RN-08, ADR-001).
+3. ~~Algoritmo de relevancia~~ → **por más buscados**: aperturas de detalle con origen en búsqueda suman puntos al producto (RN-30).
+4. ~~Ocultar/despublicar productos~~ → **incorporado**: reversible, permanece en DB (RN-31, UC-AD10).
+5. ~~Eliminación de productos con historial~~ → **borrado lógico**, referencias históricas intactas (RN-32, UC-AD09).
 
 ## Límites explícitos del MVP
 

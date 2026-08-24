@@ -27,6 +27,8 @@ Variables de entorno del backend (sin secretos en el repo):
   `JWT_SECRET_ADMIN`) y parámetros de expiración.
 - Bootstrap de admin: `ADMIN_INITIAL_EMAIL`, `ADMIN_INITIAL_PASSWORD`,
   `ADMIN_INITIAL_DISPLAY_NAME` (solo primer arranque, ADR-006).
+- Ventana de deduplicación de visitas configurable:
+  `VISIT_DEDUP_WINDOW_HOURS` (default propuesto: `24`, RN-08/ADR-001).
 
 ## Ambientes
 

@@ -5,7 +5,7 @@ racional vive en `docs/decisions/` como ADR numerado.
 
 | ADR | Decisión | Estado |
 | --- | -------- | ------ |
-| [ADR-001](../decisions/ADR-001-conteo-visitas-anonimas.md) | Conteo de visitas con usuarios anónimos (cookie UUID + ventana de deduplicación) | Aceptada |
+| [ADR-001](../decisions/ADR-001-conteo-visitas-anonimas.md) | Conteo de visitas con usuarios anónimos (cookie UUID + ventana de deduplicación) | Aceptada; ventana **configurable** por entorno (RN-08), default 24 h |
 | [ADR-002](../decisions/ADR-002-reactivacion-nativa-usuarios.md) | Reactivación nativa del usuario dado de baja | Aceptada |
 | [ADR-003](../decisions/ADR-003-jwt-cookies-y-admin-separado.md) | JWT en cookies (access 15 min, refresh rotativo 30 días) | Aceptada; acceso del admin a datos superseded por ADR-005 |
 | [ADR-004](../decisions/ADR-004-stack-tecnologico.md) | Stack: SvelteKit + FastAPI + PostgreSQL + REST + Podman/ECR Public | Aceptada |

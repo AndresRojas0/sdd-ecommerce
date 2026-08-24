@@ -24,9 +24,9 @@ El primer administrador surge del bootstrap por variables de entorno
 | UC-AD06 | Listar / buscar / filtrar productos | Por categoría, tag, texto, etc. |
 | UC-AD07 | Ver producto | Detalle completo. |
 | UC-AD08 | Editar producto | CRUD completo (RN-24). |
-| UC-AD09 | Eliminar producto | Recomendación: borrado lógico si tiene historial (pedidos/calificaciones lo referencian). Pendiente de confirmación. |
-| UC-AD10 | Ocultar / despublicar producto | **Pendiente de decisión** ("si decidimos incorporarlo"): visibilidad sin eliminación. |
-| UC-AD11 | Ver estadísticas básicas | Contadores del producto: visitas (RN-08), guardados (RN-09), promedio/cantidad de calificaciones (RN-21). |
+| UC-AD09 | Eliminar producto | **Borrado lógico** con historial preservado (RN-32): sale de catálogo y altas nuevas; sus referencias históricas se resuelven intactas. |
+| UC-AD10 | Ocultar / despublicar producto | **Incorporado** (RN-31): reversible; oculto = fuera de catálogo y búsqueda pública, permanece en DB y visible al staff. |
+| UC-AD11 | Ver estadísticas básicas | Contadores del producto: visitas con origen (RN-08), búsquedas/relevancia (RN-30), guardados (RN-09), promedio/cantidad de calificaciones (RN-21). |
 
 ## Pedidos de producto (ABM completo)
 
