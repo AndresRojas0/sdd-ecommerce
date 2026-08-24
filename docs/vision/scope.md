@@ -41,7 +41,10 @@
 2. Algoritmo de relevancia y mecánica de descuentos (ver `architecture/04-decisions.md`).
 3. ¿Ocultar/despublicar productos sin eliminarlos? (UC-AD10, propuesto por negocio)
 4. ¿Borrado lógico de productos con historial al eliminarlos? (UC-AD09)
-5. ¿Confirmar la restricción "solo pedidos del mismo comprador" para consolidación? (RN-29)
+
+## Decisiones resueltas (adicionales)
+
+5. ~~Consolidación de pedidos~~ → **solo pedidos del mismo comprador** (RN-29).
 
 ## Límites explícitos del MVP
 

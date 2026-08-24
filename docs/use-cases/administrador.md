@@ -42,7 +42,7 @@ Estados del pedido: `pendiente de validación`, `aceptado`, `rechazado`
 | UC-AD16 | Rechazar pedido | Con motivo registrado; visible para el comprador en sus pedidos (UC-B08). |
 | UC-AD17 | Corregir nombre | Corrige el nombre del producto en la línea antes de validar. |
 | UC-AD18 | Normalizar unidad/nombre | Ajusta unidad de venta o denominación a los valores del registro (RN-23). |
-| UC-AD19 | Consolidar pedidos en una sola orden de compra | Vincula uno o más pedidos `pendientes` entre sí para validarlos juntos como **una única** orden de compra (RN-29). Restricción recomendada: solo pedidos del mismo comprador creador. |
+| UC-AD19 | Consolidar pedidos en una sola orden de compra | Vincula uno o más pedidos `pendientes` entre sí para validarlos juntos como **una única** orden de compra (RN-29). Restricción: solo pedidos del mismo comprador creador. |
 
 ## Vendedores
 
