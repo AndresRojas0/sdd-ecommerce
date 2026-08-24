@@ -33,6 +33,7 @@ Son la fuente de verdad para los casos de prueba.
 | RN-26 | **Atributos mínimos del pedido**: líneas (producto + cantidad), precio subtotal, precio total, fecha de creación e id del usuario cliente creador. |
 | RN-27 | **Baja de un Vendedor**: sus órdenes de compra confirmadas quedan congeladas con su atribución original; los pedidos sin confirmar son reasignables por un Administrador a otro vendedor activo, con auditoría (ADR-007). |
 | RN-28 | **Estados del pedido**: `pendiente de validación` → `aceptado` (genera orden de compra) o `rechazado` (con motivo registrado, visible para el comprador). Solo el pedido pendiente es editable/eliminable por su creador y reasignable entre vendedores (RN-27). |
+| RN-29 | **Consolidación de pedidos**: un Administrador puede vincular varios pedidos `pendientes` entre sí para emitirlos como **una sola** orden de compra. La OC resultante referencia N pedidos origen; los subtotales se recalculan y el total es la suma. Restricción recomendada: solo pedidos del mismo comprador, para preservar la atribución (RN-26). Los pedidos consolidados pasan a `aceptado` juntos; ninguno puede consolidarse si ya fue aceptado o rechazado. |
 
 ## Categorías iniciales
 

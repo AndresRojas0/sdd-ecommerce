@@ -28,14 +28,18 @@ leer código.
 
 ```
 Carrito ──confirmar──> Pedido [pendiente de validación] ──aceptar (Admin/Vendedor)──> Orden de compra
-                              │
-                              └──rechazar (Admin/Vendedor, con motivo)──> [rechazado]
+                              │                                                        ▲
+                              │                                                       │ (RN-29: N pedidos
+                              └──rechazar (Admin/Vendedor, con motivo)──> [rechazado]        consolidables en 1 OC)
 ```
 
 - Solo el pedido `pendiente` es editable/eliminable por su creador (RN-28)
   y reasignable entre vendedores activos (RN-27).
 - Antes de validar, el staff puede sanear líneas: corregir nombre,
   normalizar unidad/denominación (UC-AD17/AD18).
+- Varios pedidos pendientes del mismo comprador pueden consolidarse en una
+  única orden de compra (RN-29, UC-AD19): la relación Pedido→Orden de
+  compra es **N:1**.
 
 ## Relaciones
 
