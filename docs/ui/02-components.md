@@ -41,9 +41,11 @@ Badge con fondo `category.color`; texto blanco o navy según luminancia
 Grilla de productos con IntersectionObserver; expone estados: loading,
 cargando-más, vacío, error (Alert destructiva + Reintentar).
 
-### `<CartSheet>`
-Drawer lateral: líneas producto+cantidad+subtotal, total general,
-CTA confirmar pedido (UC-B05). Accesible desde el ícono del navbar.
+### `<CartSheet>` y `/carrito`
+Doble acceso al carrito (decisión de negocio): drawer lateral rápido desde
+el navbar (líneas producto+cantidad+subtotal, total, CTA confirmar) con
+enlace "Ver carrito completo"; la página `/carrito` permite editar líneas
+con comodidad y confirma el pedido (UC-B05).
 
 ### `<ThemeToggle>`
 Claro/oscuro; persiste en `localStorage('theme')`.

@@ -8,9 +8,16 @@ Definición de pantallas de la tienda pública, navegación y estados.
 | ---- | -------- |
 | `/` | Home: hero + buscador + grilla de productos |
 | `./producto/<slug>` | Detalle de producto (RN-20) |
+| `/carrito` | Carrito completo: edición de líneas y previsualización del pedido |
 | `/mis-pedidos` | Pedidos del usuario autenticado |
 | `/mis-favoritos` | Favoritos del usuario autenticado |
 | `/login`, `/registro` | Autenticación (AUTH-05) |
+
+> **Carrito con doble acceso** (decisión de negocio): drawer lateral rápido
+> (`CartSheet`) desde el navbar para previsualizar sin salir de la página
+> (RN-12), y página propia `/carrito` para editar líneas con comodidad y
+> confirmar el pedido. El ícono del navbar abre el drawer; el drawer ofrece
+> "Ver carrito completo" hacia `/carrito`.
 
 ## Home
 
