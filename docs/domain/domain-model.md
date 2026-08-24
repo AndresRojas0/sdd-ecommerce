@@ -10,7 +10,7 @@ leer código.
 | **Usuario** | Persona registrada. Definido por `email` (identidad única), `display_name`, `avatar`, `password` (hash), fecha de creación de perfil, fecha/hora de último login y `is_active` (baja lógica). Consulta, busca, filtra, guarda favoritos, genera pedidos y califica productos. |
 | **Rol** | Perfil de autorización: `Visitante anónimo`, `Comprador`, `Vendedor`, `Administrador` (ver `requirements/authentication.md`). |
 | **Producto** | Ítem del catálogo. Atributos: `título`, `slug` (SEO), `descripción`, `componentes incluidos`, `datos técnicos`, `precio`, `imagen` (0..1, nula en MVP), unidad de venta (RN-23). Estado de publicación: publicado/oculto (RN-31); borrado lógico con historial (RN-32). Expone contadores de visitas (con origen, RN-08), búsquedas (RN-30) y guardados (RN-09). |
-| **Categoría** | Familia cerrada de productos (taxonomía controlada). Tiene slug propio. Ej.: `herramientas`, `electricidad`. |
+| **Categoría** | Familia cerrada de productos (taxonomía controlada). Tiene slug propio y un campo **`color`** (hex) que define el color del badge que la representa en la card del producto y en su detalle. Ej.: `herramientas`, `electricidad`. |
 | **Etiqueta (tag)** | Término descriptivo de vocabulario abierto y dinámico. Tiene slug propio. Ej.: `inoxidable`, `hexagonal`, `tornillos`. |
 | **Unidad de medida** | Unidad de venta del producto, de registro abierto: unidades, cm/m (cables), kg (cañería por kilo), etc. Extensible sin rediseño (RN-23). |
 | **Especificación técnica** | Atributo técnico que describe al producto y es buscable. Equivale a los "datos técnicos". |
