@@ -27,11 +27,15 @@ leer código.
 ## Ciclo de vida del pedido
 
 ```
-Carrito ──confirmar──> Pedido ──confirmación Admin/Vendedor──> Orden de compra
-                        (estado: generado, ...)
+Carrito ──confirmar──> Pedido [pendiente de validación] ──aceptar (Admin/Vendedor)──> Orden de compra
+                              │
+                              └──rechazar (Admin/Vendedor, con motivo)──> [rechazado]
 ```
 
-Estados intermedios del pedido: por definir en la especificación de pedidos.
+- Solo el pedido `pendiente` es editable/eliminable por su creador (RN-28)
+  y reasignable entre vendedores activos (RN-27).
+- Antes de validar, el staff puede sanear líneas: corregir nombre,
+  normalizar unidad/denominación (UC-AD17/AD18).
 
 ## Relaciones
 

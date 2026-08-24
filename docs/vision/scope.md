@@ -39,6 +39,9 @@
 
 1. ¿La ventana de deduplicación de visitas es fija (24 h) o configurable? (ADR-001)
 2. Algoritmo de relevancia y mecánica de descuentos (ver `architecture/04-decisions.md`).
+3. ¿Ocultar/despublicar productos sin eliminarlos? (UC-AD10, propuesto por negocio)
+4. ¿Borrado lógico de productos con historial al eliminarlos? (UC-AD09)
+5. Interpretación de "asociar pedido a un pedido existente" (UC-AD19).
 
 ## Límites explícitos del MVP
 

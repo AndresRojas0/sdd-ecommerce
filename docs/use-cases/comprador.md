@@ -16,11 +16,12 @@ Actor: usuario autenticado con rol Comprador. Incluye todo lo del
 
 | ID | Caso de uso | Notas |
 | -- | ----------- | ----- |
-| UC-B04 | Armar carrito | Selecciona productos con cantidades en la unidad de venta (RN-23); previsualiza subtotal/total (RN-12). |
-| UC-B05 | Crear pedido a partir del carrito | Genera pedido en estado inicial; registra fecha y creador (RN-26). |
-| UC-B06 | Editar pedido | Solo mientras NO fue confirmado como orden de compra (RN-18): cambia cantidades o productos. |
-| UC-B07 | Eliminar pedido | Solo pre-confirmación; si opta por darse de baja puede eliminarlos también (RN-19). |
-| UC-B08 | Consultar sus pedidos y su estado | Ve el ciclo Carrito → Pedido → Orden de compra (RN-18) con fecha de cada paso. |
+| UC-B04 | Armar carrito | Agregar productos con cantidad en su unidad de venta (RN-23), cambiar cantidades, quitar líneas. |
+| UC-B04a | Previsualizar el pedido en el carrito | Ve subtotal por línea y total antes de confirmar (RN-12). |
+| UC-B05 | Crear pedido a partir del carrito | Genera pedido en estado `pendiente de validación`; registra fecha y creador (RN-26). |
+| UC-B06 | Editar pedido | Solo mientras NO fue validado (aceptado/rechazado): cambia cantidades o productos. |
+| UC-B07 | Eliminar pedido | Solo pre-validación; si opta por darse de baja puede eliminarlos también (RN-19). |
+| UC-B08 | Consultar sus pedidos y su estado | Ve el ciclo completo con estados `pendiente` / `aceptado` (+ orden de compra) / `rechazado` (con motivo), y fecha de cada paso (RN-18, RN-28). |
 
 ## Calificaciones
 
