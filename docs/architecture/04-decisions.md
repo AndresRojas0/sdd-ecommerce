@@ -11,6 +11,7 @@ racional vive en `docs/decisions/` como ADR numerado.
 | [ADR-004](../decisions/ADR-004-stack-tecnologico.md) | Stack: SvelteKit + FastAPI + PostgreSQL + REST + Podman/ECR Public | Aceptada |
 | [ADR-005](../decisions/ADR-005-admin-spa-consume-api.md) | Admin como SPA Svelte independiente que consume la API REST | Aceptada |
 | [ADR-006](../decisions/ADR-006-bootstrap-admin-por-env.md) | Bootstrap de admin por variables de entorno con cambio forzado | Aceptada |
+| [ADR-007](../decisions/ADR-007-transferencia-pedidos-vendedor-de-baja.md) | Baja de Vendedor: OC congeladas, pedidos pendientes reasignables por Admin | Aceptada |
 
 ## Decisiones pendientes de ADR
 

@@ -31,6 +31,7 @@ Son la fuente de verdad para los casos de prueba.
 | RN-24 | **Catálogo inicial sembrado**: arranca con dos o tres productos modelo; el resto del catálogo lo crea el staff: Vendedor da de alta productos y etiquetas, Administrador tiene CRUD completo. |
 | RN-25 | **Sin moderación en MVP**: no hay flujo de moderación de contenido en esta etapa. |
 | RN-26 | **Atributos mínimos del pedido**: líneas (producto + cantidad), precio subtotal, precio total, fecha de creación e id del usuario cliente creador. |
+| RN-27 | **Baja de un Vendedor**: sus órdenes de compra confirmadas quedan congeladas con su atribución original; los pedidos sin confirmar son reasignables por un Administrador a otro vendedor activo, con auditoría (ADR-007). |
 
 ## Categorías iniciales
 

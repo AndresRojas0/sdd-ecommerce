@@ -33,10 +33,10 @@ Incluye los casos comunes de [cuenta](cuenta.md) (UC-C01..UC-C10).
 
 ## Darse de baja
 
-El Vendedor puede darse de baja (UC-C09). El destino de sus órdenes de
-compra está en decisión (opciones evaluadas con el negocio): se tiende a
-que permanezcan asociadas a sus datos históricos y que solo la gestión
-pendiente sea transferible por un Administrador. Pendiente de ADR.
+El Vendedor puede darse de baja (UC-C09). Sus órdenes de compra confirmadas
+quedan congeladas con su atribución original; los pedidos sin confirmar son
+reasignables por un Administrador a otro vendedor activo con auditoría
+(RN-27, ADR-007).
 
 ## Omisión corregida respecto de la lista original
 
