@@ -41,10 +41,11 @@ Footer persistente
 ### Copy del hero (propuesto)
 
 > **"El punto de partida de tu próximo proyecto."**
-> Herramientas, materiales y repuestos. Buscá por nombre, categoría o dato
-> técnico y encontralo al toque.
+> Herramientas, materiales y repuestos. Buscá por nombre o dato técnico,
+> filtrá por categoría y etiqueta, y encontralo al toque.
 
-Juega con la marca ("Punto") y declara las tres vías de búsqueda (RN-04).
+Juega con la marca ("Punto") y declara el modelo real: búsqueda por nombre
+y datos técnicos (RN-04) combinable con filtros de categoría y tags (RF-04).
 
 ### Navbar reactivo
 

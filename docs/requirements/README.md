@@ -14,6 +14,8 @@ restricciones y comportamientos esperados.
 | `authentication.md` | Especificación de autenticación y autorización. |
 | `user-stories.md` | Necesidades expresadas desde la perspectiva del usuario. |
 
+> `non-functional-requirements.md` y `user-stories.md`: planeados, aún no creados.
+
 ## Consejos
 
 - Las reglas de negocio son la fuente de verdad para los casos de prueba.

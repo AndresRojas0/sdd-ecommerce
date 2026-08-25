@@ -17,7 +17,7 @@ Funcionalidades que debe ofrecer la aplicación (primera iteración).
 | RF-11 | Rol vendedor | Ver pedidos generados y su estado; cargar pedidos en nombre de un cliente; agregar productos y sus etiquetas. |
 | RF-12 | Contador de visitas | El sistema registra cuántas visitas recibe un producto. Una visita es la apertura del detalle del producto. La recarga de página no incrementa el contador más de una vez (ver RN-08 y ADR-001). |
 | RF-13 | Contador de guardados | El sistema registra cuántas veces se guardó un producto en favoritos; se decrementa si se anula el guardado. |
-| RF-14 | Carrito y pedido | Los productos tienen precio y son seleccionables con cantidades para armar una orden de compra, previsualizable en un carrito antes de generar el pedido. |
+| RF-14 | Carrito y pedido | Los productos tienen precio y son seleccionables con cantidades para armar un pedido, previsualizable en el carrito antes de generarlo. |
 | RF-15 | Imagen de producto | Cada producto admite hasta una imagen representativa. En esta primera etapa el campo queda nulo (MVP). |
 | RF-16 | Registro y login | El usuario se registra con email único, display-name y contraseña (política AUTH-04). Login con email + contraseña con mensaje de éxito o error específico (AUTH-05). Se registra fecha/hora del último login. |
 | RF-17 | Recuperación de contraseña | El usuario puede recuperar su contraseña si la olvida. **Diferida**: requiere envío de correos electrónicos, no configurado en esta etapa (AUTH-06). |

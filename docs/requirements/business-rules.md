@@ -15,15 +15,15 @@ Son la fuente de verdad para los casos de prueba.
 | RN-08 | **Visita = apertura de detalle**: contar una visita cuando un visitante despliega el detalle de un producto. El mismo visitante no incrementa el contador más de una vez por recarga (F5) dentro de una **ventana de deduplicación configurable** (valor por defecto propuesto: 24 h, parámetro de entorno). El método de identificación del visitante anónimo está definido en `decisions/ADR-001-conteo-visitas-anonimas.md`. La visita registra su **origen** (directa o desde resultados de búsqueda) para alimentar la relevancia (RN-30). |
 | RN-09 | **Contador de guardados**: guardar un producto en favoritos incrementa su contador; anular el guardado lo decrementa (piso cero). |
 | RN-10 | **Catálogo público**: consultar, buscar, filtrar y ordenar productos no requiere autenticación (ver `authentication.md`). |
-| RN-11 | **Precio obligatorio**: todo producto publicable tiene un precio. Los productos son seleccionables con cantidades para armar una orden de compra. |
-| RN-12 | **Carrito previsualizable**: la orden de compra se arma como carrito (producto + cantidad) y debe poder previsualizarse antes de generar el pedido. |
+| RN-11 | **Precio obligatorio**: todo producto publicable tiene un precio. Los productos son seleccionables con cantidades para armar un pedido mediante el carrito. |
+| RN-12 | **Carrito previsualizable**: el pedido se arma como carrito (producto + cantidad) y debe poder previsualizarse antes de generarse. |
 | RN-13 | **Imagen única opcional**: un producto admite hasta una imagen representativa; en la primera etapa el campo es nulo. |
 | RN-14 | **Identidad por email**: el email es único por cuenta y es la clave de login. El usuario se completa con display-name, avatar, fecha de creación de perfil y fecha/hora de último login. |
 | RN-15 | **Política de contraseña**: mínimo 8 caracteres, al menos una mayúscula, un número y un caracter especial. Se almacena solo como hash. |
 | RN-16 | **Recuperación de contraseña diferida**: prevista en el diseño, no implementable hasta contar con envío de correos electrónicos. |
-| RN-17 | **Baja lógica del usuario**: darse de baja setea `is_active = false` y NO borra nada: se conservan visitas, favoritos (con sus contadores) y pedidos. Si el usuario vuelve a la plataforma, recupera su historial según la estrategia de reactivación definida (ADR pendiente). |
+| RN-17 | **Baja lógica del usuario**: darse de baja setea `is_active = false` y NO borra nada: se conservan visitas, favoritos (con sus contadores) y pedidos. Si el usuario vuelve a la plataforma, recupera su historial automáticamente mediante la reactivación nativa (ADR-002). |
 | RN-18 | **Confirmación de pedido**: un pedido pasa a **orden de compra** solo cuando lo confirma un Admin o un Vendedor. El comprador no autogenera órdenes de compra. |
-| RN-19 | *(Propuesta, sujeta a confirmación)* Al eliminarse, el usuario puede optar por eliminar también sus **pedidos**; los que ya fueron confirmados como **órdenes de compra** son documentos comerciales y no se eliminan. |
+| RN-19 | Al eliminarse, el usuario puede optar por eliminar también sus **pedidos**; los que ya fueron confirmados como **órdenes de compra** son documentos comerciales y no se eliminan. |
 | RN-20 | **Slugs para SEO**: cada producto, categoría y etiqueta tiene un slug único que forma parte de su URL pública. |
 | RN-21 | **Calificación por estrellas**: cada calificación vale de 1 a 5 estrellas. El promedio visible es `Σ estrellas / cantidad de calificaciones`. El render es fraccional: un promedio de 4.15 pinta 4 estrellas completas y una fracción de la quinta. |
 | RN-22 | **Alcance social acotado**: compartir producto: sí. Seguimiento (follow): fuera del MVP. El perfil de usuario es privado; el Vendedor/Admin lo consulta para ver todos sus pedidos y puede editar sus datos de perfil (no rol ni contraseña). |

@@ -120,7 +120,7 @@ Mixes Oswald and Roboto Condensed for visual contrast. Weight range spans bold, 
 
 ### Font Roles
 - **Headline Font**: Oswald
-- **Body Font**: Oswald
+- **Body Font**: Roboto Condensed
 
 ### Type Scale Evidence
 | Role | Font | Size | Weight | Line Height | Letter Spacing | Stack / Features | Notes |

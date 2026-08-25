@@ -27,6 +27,8 @@ escenarios verificables.
 | ------- | ------------ |
 | `README.md` | Este índice y guía del ciclo SDD. |
 | `TEMPLATE.md` | Plantilla para escribir una spec nueva. |
+
+> `TEMPLATE.md`: planeado; `<cambio>.md` se agrega con cada change.
 | `<cambio>.md` | Spec de un cambio concreto (se agrega con cada change). |
 
 ## Consejos

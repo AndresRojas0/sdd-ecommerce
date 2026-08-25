@@ -22,8 +22,6 @@
 | Envíos y logística | No mencionado. Pendiente. |
 | Recuperación de contraseña | Diferida: requiere envío de correos, no configurado en esta etapa (AUTH-06). |
 | Definición de descuento | Existe como criterio de orden ("con descuento"); falta definir mecánica (% vs. precio final, vigencia). |
-| Definición de relevancia | Criterio de orden sin algoritmo definido todavía. |
-| Estrategia de reactivación del usuario dado de baja | En decisión: opciones presentadas, ADR pendiente (RN-17). |
 
 ## Decisiones resueltas
 

@@ -12,6 +12,8 @@ información que representa cada una.
 | `entities.md` | Descripción detallada de cada entidad y sus atributos. |
 | `data-model.md` | Esquema físico: tablas, columnas, índices y relaciones. |
 
+> `entities.md` y `data-model.md`: planeados (data-model es el próximo paso del paradigma).
+
 ## Consejos
 
 - El modelo de dominio debe entenderse sin leer código.

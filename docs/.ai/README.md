@@ -15,6 +15,8 @@ proyecto, guía de prompts, workflow, estándares y definition of done.
 | `definition-of-done.md` | Criterios de terminado para tareas y cambios. |
 | `coding-standards.md` | Estándares de código del proyecto. |
 
+> Los seis documentos: planeados; se materializarán al iniciar la implementación.
+
 ## Consejos
 
 - Este contexto es lo primero que lee un agente de IA antes de trabajar.

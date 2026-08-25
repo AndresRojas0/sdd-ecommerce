@@ -6,16 +6,16 @@ Los catálogos de ferretería y suministros industriales son amplios y
 heterogéneos: miles de productos (tornillos, discos, llaves, cables,
 materias primas, etc.) que se agrupan por familias técnicas y se
 describen con especificaciones propias de cada rubro. Encontrar el
-producto correcto exige poder buscar por nombre, por familia o por sus
-atributos técnicos.
+producto correcto exige combinar la búsqueda por nombre y datos técnicos
+con filtros por familia de producto y etiquetas.
 
 ## Solución
 
 Una aplicación ecommerce donde un usuario registrado puede:
 
 - consultar el catálogo de productos,
-- buscar productos por categoría, por nombre o por especificaciones técnicas,
-- filtrar productos por categoría y por etiquetas (tags),
+- buscar productos por nombre o por especificaciones técnicas,
+- filtrar por categoría y por etiquetas (tags), combinable con la búsqueda,
 - guardar productos como favoritos,
 - generar pedidos de productos,
 - calificar productos.

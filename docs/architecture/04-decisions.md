@@ -15,5 +15,4 @@ racional vive en `docs/decisions/` como ADR numerado.
 
 ## Decisiones pendientes de ADR
 
-- Algoritmo de "relevancia" para ordenamiento de búsqueda.
 - Mecánica de descuentos (% vs. precio final, vigencia).

@@ -38,4 +38,4 @@ detalle mínimo necesario para aplicar la ventana.
 
 - Positivas: métrica estable ante recargas; funciona igual para anónimos y registrados; auditable desde el servidor.
 - Negativas: requiere emisión de cookie (aceptable, funcional y no publicitaria); cambiar de dispositivo/navegador puede contar una visita extra (aceptado para MVP).
-- Pendiente: definir si la ventana de deduplicación es fija (24 h) o configurable.
+- Resolución posterior (no modifica la decisión original): la ventana de deduplicación es **configurable** por entorno (`VISIT_DEDUP_WINDOW_HOURS`, default 24 h) — ver RN-08 y `architecture/03-deployment.md`.

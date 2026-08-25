@@ -10,6 +10,8 @@ Estrategia de pruebas y casos de prueba del proyecto.
 | `00-strategy.md` | Estrategia de pruebas: niveles, herramientas, cobertura. |
 | `01-test-cases.md` | Casos de prueba derivados de reglas de negocio y casos de uso. |
 
+> Ambos documentos: planeados, aún no creados.
+
 ## Consejos
 
 - Cada regla de negocio de `docs/requirements/` debería tener su caso de prueba.

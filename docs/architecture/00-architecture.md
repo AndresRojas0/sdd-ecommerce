@@ -9,7 +9,7 @@ ADR-004/005).
 | ---------- | ---------- | ---------------- |
 | **Tienda pública (storefront)** | Svelte / SvelteKit (mobile-first) | Catálogo público, búsqueda/filtros/orden, slugs SEO, carrito, favoritos, calificaciones, login comprador. |
 | **Panel de administración** | Svelte (SPA independiente) | ABM de catálogo, usuarios y roles; confirmación de pedidos → orden de compra. Consuma la API, nunca la DB directa (ADR-005). |
-| **Backend** | FastAPI (REST) | Toda la lógica de negocio: dominio, reglas RN-01..RN-26, dos sistemas de autenticación aislados (tienda y admin), bootstrap de admin (ADR-006). |
+| **Backend** | FastAPI (REST) | Toda la lógica de negocio: dominio, reglas RN-01..RN-32, dos sistemas de autenticación aislados (tienda y admin), bootstrap de admin (ADR-006). |
 | **Base de datos** | PostgreSQL | Persistencia relacional del modelo de dominio (N:M producto-categoría, producto-etiqueta, pedidos, tokens de refresh hasheados). |
 
 ## Comunicación

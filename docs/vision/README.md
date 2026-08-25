@@ -13,6 +13,8 @@ usará, cuáles son los objetivos y cuál es el alcance inicial.
 | `objectives.md` | Objetivos del sistema, medibles si es posible. |
 | `scope.md` | Alcance y límites: qué se incluye y qué no. |
 
+> `glossary.md` y `objectives.md`: planeados, aún no creados.
+
 ## Consejos
 
 - Empezá por `vision.md`: si no podés explicar el problema en una página,
