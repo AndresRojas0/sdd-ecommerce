@@ -11,8 +11,9 @@ del admin a los datos.
 
 ## Decisión
 
-- El panel de administración es un **proyecto independiente en Svelte**
-  (sin SvelteKit si no necesita SSR: SPA pura).
+- El panel de administración es un **proyecto independiente en SvelteKit**
+  (evolución del redactado original "Svelte SPA pura": se implementa con el
+  mismo framework que el storefront para compartir patrones).
 - Consume el **backend FastAPI vía REST**: nunca accede directo a
   PostgreSQL.
 - Su sistema de autenticación es **independiente** del de la tienda:
