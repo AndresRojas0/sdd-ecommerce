@@ -10,7 +10,7 @@ Estrategia de pruebas y casos de prueba del proyecto.
 | `00-strategy.md` | Estrategia de pruebas: niveles, herramientas, cobertura. |
 | `01-test-cases.md` | Casos de prueba derivados de reglas de negocio y casos de uso. |
 
-> Ambos documentos: planeados, aún no creados.
+> `00-strategy.md` y `01-test-cases.md`: creados. El binding de casos a endpoints se cierra al diseñar la API.
 
 ## Consejos
 

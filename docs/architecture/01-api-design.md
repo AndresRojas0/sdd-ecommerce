@@ -28,3 +28,10 @@ compra), `users`, `roles`, `auth`.
 
 > Este documento crecerá con los contratos concretos cuando se especifique
 > la fase de diseño de API.
+
+## Regla de Definition of Done por endpoint
+
+Ningún endpoint se considera terminado sin sus pruebas asociadas
+(TEST-04, `testing/00-strategy.md`): todo endpoint que mute estado,
+ejecute reglas de negocio en lectura o pertenezca a auth requiere casos
+happy + bad path trazados a su RN/UC (`TC-*` en `testing/01-test-cases.md`).
