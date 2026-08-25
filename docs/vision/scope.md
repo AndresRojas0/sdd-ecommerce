@@ -44,6 +44,9 @@
 3. ~~Algoritmo de relevancia~~ → **por más buscados**: aperturas de detalle con origen en búsqueda suman puntos al producto (RN-30).
 4. ~~Ocultar/despublicar productos~~ → **incorporado**: reversible, permanece en DB (RN-31, UC-AD10).
 5. ~~Eliminación de productos con historial~~ → **borrado lógico**, referencias históricas intactas (RN-32, UC-AD09).
+6. ~~¿Quién puede calificar?~~ → **solo con pedido aceptado** que incluya el producto (RN-33).
+7. ~~Destino de pedidos rechazados~~ → terminal; **duplicable como nuevo pedido pendiente** con motivo visible (RN-28).
+8. ~~Persistencia del carrito~~ → **server-side por usuario autenticado**; anónimo dispara prompt de login (RN-34).
 
 ## Límites explícitos del MVP
 

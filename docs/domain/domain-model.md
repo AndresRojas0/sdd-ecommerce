@@ -17,7 +17,7 @@ leer código.
 | **Componentes incluidos** | Lista de elementos que vienen con el producto. |
 | **Favorito** | Relación entre un usuario y un producto marcado como preferido. Alimentar el contador de guardados del producto. |
 | **Visita** | Apertura del detalle de un producto por un visitante (autenticado o anónimo). Se deduplica por visitante y ventana de tiempo configurable (ADR-001) y registra su origen (directa o desde búsqueda, RN-30). |
-| **Carrito** | Borrador de orden de compra: líneas de producto con cantidades, previsualizable antes de confirmar. |
+| **Carrito** | Borrador de orden de compra: líneas de producto con cantidades, previsualizable antes de confirmar. Persistencia server-side por usuario autenticado; sobrevive logout y cambio de dispositivo (RN-34). |
 | **Línea de pedido** | Par producto + cantidad dentro de un carrito o pedido. |
 | **Pedido** | Solicitud generada por un comprador a partir del carrito. Atributos: líneas, precio subtotal, precio total, fecha de creación, usuario creador. Tiene estado y autor (RN-26). |
 | **Orden de compra** | Documento comercial generado cuando Admin o Vendedor confirma un pedido. Conserva la relación con el usuario que lo creó. |
@@ -34,7 +34,8 @@ Carrito ──confirmar──> Pedido [pendiente de validación] ──aceptar (
 ```
 
 - Solo el pedido `pendiente` es editable/eliminable por su creador (RN-28)
-  y reasignable entre vendedores activos (RN-27).
+  y reasignable entre vendedores activos (RN-27). Un pedido `rechazado` es
+  terminal: solo admite duplicarse como nuevo pendiente (RN-28).
 - Antes de validar, el staff puede sanear líneas: corregir nombre,
   normalizar unidad/denominación (UC-AD17/AD18).
 - Varios pedidos pendientes del mismo comprador pueden consolidarse en una

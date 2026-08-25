@@ -27,7 +27,7 @@ Especificación de roles, autenticación y autorización (tercera iteración).
 
 | ID | Regla |
 | -- | ----- |
-| AUTH-01 | El acceso a favoritos, carrito, pedidos y calificaciones requiere sesión iniciada. |
+| AUTH-01 | El acceso a favoritos, carrito, pedidos y calificaciones requiere sesión iniciada. El carrito es server-side por usuario y persiste entre sesiones y dispositivos (RN-34). |
 | AUTH-02 | La consulta pública del catálogo no requiere autenticación. |
 | AUTH-03 | El login se realiza con `email` + contraseña. El `email` es único por cuenta. |
 | AUTH-04 | Política de contraseña: mínimo 8 caracteres, al menos una mayúscula, un número y un caracter especial. |

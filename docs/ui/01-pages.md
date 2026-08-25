@@ -51,8 +51,8 @@ y datos técnicos (RN-04) combinable con filtros de categoría y tags (RF-04).
 
 | Estado | Elementos |
 | ------ | --------- |
-| Anónimo | Logo, buscador, carrito, botón **Ingresar** |
-| Logueado | Ídem + enlaces **Mis Pedidos** y **Mis Favoritos**; el botón pasa a menú de usuario (avatar): Mi perfil · Mis pedidos · Mis favoritos · Cerrar sesión |
+| Anónimo | Logo, buscador, ícono de carrito (dispara el prompt de login: UC-A10/RN-34), botón **Ingresar** |
+| Logueado | Ídem + enlaces **Mis Pedidos** y **Mis Favoritos**; el botón pasa a menú de usuario (avatar): Mi perfil · Mis pedidos · Mis favoritos · Cerrar sesión. El carrito abre el drawer |
 
 ## Card de producto
 

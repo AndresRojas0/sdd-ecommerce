@@ -11,7 +11,7 @@ Funcionalidades que debe ofrecer la aplicación (primera iteración).
 | RF-05 | Autocompletado de etiquetas | Mientras el usuario escribe una etiqueta, el sistema sugiere etiquetas existentes que contienen el texto ingresado. Ej.: `tor` → `tornillos`, etc. |
 | RF-06 | Favoritos | El usuario puede guardar productos como favoritos y consultarlos. |
 | RF-07 | Pedidos | El usuario puede generar pedidos de productos. |
-| RF-08 | Calificaciones | El usuario puede calificar productos. |
+| RF-08 | Calificaciones | El usuario puede calificar productos; elegibilidad: solo con pedido aceptado que incluya el producto (RN-33). |
 | RF-09 | Ordenamiento de resultados | Los resultados de búsqueda/filtrado pueden ordenarse por: relevancia, más reciente, con descuento, precio más alto, precio más bajo, A-Z, Z-A. |
 | RF-10 | Administración del catálogo | El administrador tiene alcance total: ABM de productos, categorías, etiquetas y usuarios (ver `authentication.md`). |
 | RF-11 | Rol vendedor | Ver pedidos generados y su estado; cargar pedidos en nombre de un cliente; agregar productos y sus etiquetas. |
@@ -33,7 +33,7 @@ Funcionalidades que debe ofrecer la aplicación (primera iteración).
 | RF-27 | Stack definido | SvelteKit (tienda), Svelte SPA (admin), FastAPI REST, PostgreSQL, Podman con imágenes públicas de AWS ECR Public (ADR-004). |
 | RF-28 | Perfil y avatar | El usuario autenticado edita su perfil (display-name) y cambia su avatar. |
 | RF-29 | Cambio de contraseña logueado | Con contraseña actual válida + nueva según política; invalida refresh tokens activos. |
-| RF-30 | Edición y baja de pedido | El comprador edita o elimina sus pedidos solo mientras no fueron confirmados como orden de compra (RN-18/RN-19). |
+| RF-30 | Edición y baja de pedido | El comprador edita o elimina sus pedidos solo en estado `pendiente de validación` (RN-28); un pedido rechazado es terminal y solo admite duplicarse como nuevo pedido pendiente. |
 | RF-31 | Reactivación de cuenta | Login con credenciales válidas sobre cuenta dada de baja ofrece reactivación: mismo userId e historial íntegro (UC-C10, ADR-002). |
 | RF-32 | Vendedor gestiona perfiles | Busca perfiles y consulta pedidos por usuario; puede editar datos de perfil (no rol ni contraseña). |
 
