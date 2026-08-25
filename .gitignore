@@ -2,3 +2,10 @@
 Thumbs.db
 Desktop.ini
 .DS_Store
+.env
+node_modules/
+.svelte-kit/
+build/
+__pycache__/
+*.pyc
+.venv/

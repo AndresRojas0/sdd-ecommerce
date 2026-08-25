@@ -1,6 +1,19 @@
 # Despliegue
 
-Estrategia de contenedores y ambientes (primera iteración).
+Estrategia de contenedores y ambientes.
+
+## Estructura del repositorio (monorepo)
+
+| Carpeta | Proyecto | Puerto host |
+| ------- | -------- | ----------- |
+| `backend/` | API REST FastAPI | 8000 |
+| `frontend/` | Storefront SvelteKit (adapter-node) | 3000 |
+| `admin/` | Panel SvelteKit (adapter-node) | 3001 |
+| `podman-compose.yml` | Stack completo: `podman-compose up --build` | — |
+
+El comando de arranque levanta los 4 servicios (`db`, `api`, `web`,
+`admin`); la API espera a que PostgreSQL responda (`wait_for_db.py`) antes
+de servir. Estado del stack: `GET http://localhost:8000/health`.
 
 ## Contenedores (Podman)
 

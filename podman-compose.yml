@@ -1,0 +1,54 @@
+# Punto App — stack completo (ADR-004)
+# Uso: podman-compose up --build
+#
+# Servicios:
+#   db     PostgreSQL 16 (ECR Public)
+#   api    FastAPI REST en http://localhost:8000  (/health para verificar)
+#   web    Storefront SvelteKit en http://localhost:3000
+#   admin  Panel SvelteKit    en http://localhost:3001
+#
+# Imágenes base desde public.ecr.aws (nunca Docker Hub).
+
+services:
+  db:
+    image: public.ecr.aws/docker/library/postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-punto}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-punto}
+      POSTGRES_DB: ${POSTGRES_DB:-punto}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-punto} -d ${POSTGRES_DB:-punto}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  api:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://punto:punto@db:5432/punto}
+      JWT_SECRET_STORE: ${JWT_SECRET_STORE:-change-me-store}
+      JWT_SECRET_ADMIN: ${JWT_SECRET_ADMIN:-change-me-admin}
+      VISIT_DEDUP_WINDOW_HOURS: ${VISIT_DEDUP_WINDOW_HOURS:-24}
+      ADMIN_INITIAL_EMAIL: ${ADMIN_INITIAL_EMAIL:-}
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
+      ADMIN_INITIAL_DISPLAY_NAME: ${ADMIN_INITIAL_DISPLAY_NAME:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+
+  admin:
+    build: ./admin
+    ports:
+      - "3001:3000"
+
+volumes:
+  pgdata:
