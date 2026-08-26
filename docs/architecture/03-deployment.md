@@ -22,9 +22,14 @@ Endpoints de estado:
 
 Persistencia de datos:
 
-- **Bind mount local** `./.data/postgres` (gitignored): los datos
-  sobreviven a `podman-compose down -v` porque viven en el disco del host,
-  no en un volumen gestionado.
+- **Volumen nombrado externo** (`punto_pgdata`, `external: true`): vive en
+  el almacenamiento nativo de Podman y **no es eliminado** por
+  `podman-compose down -v` porque no pertenece al compose. Crearlo una vez:
+  `podman volume create punto_pgdata`.
+- Motivo: los bind mounts desde `/mnt/*` (NTFS vía drvfs de WSL) no soportan
+  `chown` POSIX → `initdb` falla con EPERM. Si el repositorio se clona en un
+  filesystem Linux nativo (p. ej. `~/proyectos`), un bind mount
+  `./.data/postgres:/var/lib/postgresql/data:U` vuelve a ser viable.
 
 ## Contenedores (Podman)
 

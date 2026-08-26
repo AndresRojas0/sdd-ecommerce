@@ -11,6 +11,17 @@
 #
 # Imágenes base desde public.ecr.aws (nunca Docker Hub).
 
+# Persistencia de datos (decisión de infraestructura):
+#
+# El bind mount hacia ./.data/postgres NO es viable cuando el proyecto
+# vive en /mnt/d (disco NTFS vía drvfs de WSL): ese filesystem no soporta
+# chown POSIX y initdb falla con EPERM sin importar los flags (:U incluido).
+#
+# Solución: volumen NOMBRADO gestionado por Podman (almacenamiento Linux
+# nativo, permisos correctos siempre). Se declara EXTERNAL para que
+# `podman-compose down -v` NO lo elimine: la persistencia del punto de
+# venta queda garantizada aunque se tire todo el stack.
+
 services:
   db:
     image: public.ecr.aws/docker/library/postgres:16-alpine
@@ -18,12 +29,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-punto}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-punto}
       POSTGRES_DB: ${POSTGRES_DB:-punto}
-    # Persistencia en disco local: sobrevive incluso a `down -v`.
-    # El flag `:U` es CLAVE en Podman rootless: podman ajusta la propiedad
-    # del directorio del host para que el usuario `postgres` del contenedor
-    # pueda escribir (sin esto: "could not change permissions ... EPERM").
     volumes:
-      - ./.data/postgres:/var/lib/postgresql/data:U
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-punto} -d ${POSTGRES_DB:-punto}"]
       interval: 5s
@@ -61,4 +68,9 @@ services:
     ports:
       - "3001:3000"
 
-# Sin volúmenes nombrados: la persistencia vive en ./.data (gitignored)
+volumes:
+  pgdata:
+    # external=true: no es propiedad de este compose → `down -v` no la borra.
+    # Crearla una sola vez:  podman volume create punto_pgdata
+    external: true
+    name: punto_pgdata
