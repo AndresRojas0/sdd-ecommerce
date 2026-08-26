@@ -18,9 +18,12 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-punto}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-punto}
       POSTGRES_DB: ${POSTGRES_DB:-punto}
-    # Persistencia en disco local: sobrevive incluso a `down -v`
+    # Persistencia en disco local: sobrevive incluso a `down -v`.
+    # El flag `:U` es CLAVE en Podman rootless: podman ajusta la propiedad
+    # del directorio del host para que el usuario `postgres` del contenedor
+    # pueda escribir (sin esto: "could not change permissions ... EPERM").
     volumes:
-      - ./.data/postgres:/var/lib/postgresql/data
+      - ./.data/postgres:/var/lib/postgresql/data:U
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-punto} -d ${POSTGRES_DB:-punto}"]
       interval: 5s
