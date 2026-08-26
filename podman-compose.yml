@@ -2,8 +2,10 @@
 # Uso: podman-compose up --build
 #
 # Servicios:
-#   db     PostgreSQL 16 (ECR Public)
-#   api    FastAPI REST en http://localhost:8000  (/health para verificar)
+#   db     PostgreSQL 16 (ECR Public) — datos en bind mount local ./.data/postgres
+#   api    FastAPI REST en http://localhost:8000 (hot-reload activado)
+#          GET /health → estado completo (incluye conexión a DB)
+#          GET /healthz → liveness puro
 #   web    Storefront SvelteKit en http://localhost:3000
 #   admin  Panel SvelteKit    en http://localhost:3001
 #
@@ -16,8 +18,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-punto}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-punto}
       POSTGRES_DB: ${POSTGRES_DB:-punto}
+    # Persistencia en disco local: sobrevive incluso a `down -v`
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./.data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-punto} -d ${POSTGRES_DB:-punto}"]
       interval: 5s
@@ -32,10 +35,15 @@ services:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://punto:punto@db:5432/punto}
       JWT_SECRET_STORE: ${JWT_SECRET_STORE:-change-me-store}
       JWT_SECRET_ADMIN: ${JWT_SECRET_ADMIN:-change-me-admin}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-15}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-30}
       VISIT_DEDUP_WINDOW_HOURS: ${VISIT_DEDUP_WINDOW_HOURS:-24}
-      ADMIN_INITIAL_EMAIL: ${ADMIN_INITIAL_EMAIL:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001}
+      ADMIN_INITIAL_USER: ${ADMIN_INITIAL_USER:-}
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}
       ADMIN_INITIAL_DISPLAY_NAME: ${ADMIN_INITIAL_DISPLAY_NAME:-}
+    volumes:
+      - ./backend:/app   # hot-reload: cambios de código sin rebuild
     depends_on:
       db:
         condition: service_healthy
@@ -50,5 +58,4 @@ services:
     ports:
       - "3001:3000"
 
-volumes:
-  pgdata:
+# Sin volúmenes nombrados: la persistencia vive en ./.data (gitignored)

@@ -21,9 +21,15 @@ Reglas del bootstrap:
 | ID | Regla |
 | -- | ----- |
 | BOOT-01 | Solo corre si NO existe ningún usuario administrador; en arranques siguientes es un no-op (idempotente). |
-| BOOT-02 | La contraseña inicial debe cumplir la política general (RN-15). |
+| BOOT-02 | La contraseña inicial debe cumplir la política general (RN-15); si no, el arranque falla ruidosamente. |
 | BOOT-03 | El admin creado tiene `must_change_password = true`: el sistema **fuerza el cambio de contraseña en el primer login** antes de permitir cualquier otra operación. |
 | BOOT-04 | Las variables de entorno no se usan como almacenamiento persistente de credenciales: después del primer login forzado, la única contraseña válida es la nueva. |
+
+> Resolución posterior (no cambia la decisión): la variable de email se
+> denomina `ADMIN_INITIAL_USER` (antes redactada como `ADMIN_INITIAL_EMAIL`);
+> la semántica es idéntica. Implementación: `backend/app/core/bootstrap.py`,
+> ejecutado idempotentemente al arranque de la API; tabla `users` provisional
+> gestionada con create_all hasta que Alembic tome el control del esquema.
 
 ## Alternativas
 

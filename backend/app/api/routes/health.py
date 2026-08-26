@@ -1,4 +1,8 @@
-"""Health check endpoint."""
+"""Health endpoints.
+
+- GET /health  → readiness: app status + database connectivity + config.
+- GET /healthz → liveness: process is up, no dependency checks.
+"""
 
 from fastapi import APIRouter
 
@@ -17,3 +21,8 @@ def health() -> dict:
         "database": "up" if check_db() else "down",
         "visit_dedup_window_hours": settings.visit_dedup_window_hours,
     }
+
+
+@router.get("/healthz")
+def healthz() -> dict:
+    return {"status": "ok"}

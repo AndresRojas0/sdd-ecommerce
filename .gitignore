@@ -1,11 +1,49 @@
-.engram/
-Thumbs.db
-Desktop.ini
-.DS_Store
+# ============ Entornos y secretos (nunca commitear) ============
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# ============ Datos persistentes locales (bind mounts) ============
+.data/
+data/
+uploads/
+media/
+
+# ============ Python ============
+__pycache__/
+*.py[cod]
+*.pyc
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# ============ Node / SvelteKit ============
 node_modules/
 .svelte-kit/
 build/
-__pycache__/
-*.pyc
-.venv/
+dist/
+.vite/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ============ IDE / OS ============
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ============ Tooling local del proyecto ============
+.engram/
