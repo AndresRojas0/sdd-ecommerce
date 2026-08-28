@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,7 +25,10 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000,http://localhost:3001"
 
     # Admin bootstrap (ADR-006): ADMIN_INITIAL_USER holds the email.
-    admin_initial_user: str | None = None
+    # Acepta también ADMIN_INITIAL_EMAIL por compatibilidad con .env previos.
+    admin_initial_user: str | None = Field(
+        default=None, validation_alias=AliasChoices("ADMIN_INITIAL_USER", "ADMIN_INITIAL_EMAIL")
+    )
     admin_initial_password: str | None = None
     admin_initial_display_name: str | None = None
 
