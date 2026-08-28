@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--background: 0 0% 100%;
+		--foreground: 229 42% 14%;
+		--card: 0 0% 94%;
+		--card-foreground: 229 42% 14%;
+		--popover: 0 0% 100%;
+		--popover-foreground: 229 42% 14%;
+		--primary: 220 100% 26%;
+		--primary-foreground: 0 0% 100%;
+		--secondary: 51 100% 50%;
+		--secondary-foreground: 229 42% 14%;
+		--muted: 0 0% 94%;
+		--muted-foreground: 0 0% 40%;
+		--accent: 51 100% 50%;
+		--accent-foreground: 229 42% 14%;
+		--destructive: 0 84% 60%;
+		--destructive-foreground: 0 0% 98%;
+		--border: 0 0% 80%;
+		--input: 0 0% 80%;
+		--ring: 220 100% 26%;
+		--radius: 0px;
+	}
+
+	.dark {
+		--background: 228 23% 12%;
+		--foreground: 0 0% 98%;
+		--card: 228 18% 15%;
+		--card-foreground: 0 0% 98%;
+		--popover: 228 23% 12%;
+		--popover-foreground: 0 0% 98%;
+		--primary: 221 60% 50%;
+		--primary-foreground: 0 0% 100%;
+		--secondary: 51 100% 45%;
+		--secondary-foreground: 228 23% 12%;
+		--muted: 228 18% 20%;
+		--muted-foreground: 220 14% 66%;
+		--accent: 51 100% 45%;
+		--accent-foreground: 228 23% 12%;
+		--destructive: 0 62% 30%;
+		--destructive-foreground: 0 0% 98%;
+		--border: 228 18% 24%;
+		--input: 228 18% 24%;
+		--ring: 221 60% 50%;
+	}
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground font-roboto;
+	}
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	nav,
+	button,
+	[data-font='oswald'] {
+		font-family: 'Oswald', sans-serif;
+	}
+}
