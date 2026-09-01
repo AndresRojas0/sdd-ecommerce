@@ -187,6 +187,62 @@
 	</nav>
 </header>
 
+<CartSheet bind:open={cartOpen} />
+
+<main class="min-h-[70vh] bg-background">
+	{@render children()}
+</main>
+
+<footer class="site-footer" role="contentinfo">
+	<div class="footer-promo">★ ¡No pagues de más en Punto App! ★</div>
+	<div class="max-w-[1280px] mx-auto px-3">
+		<div class="footer-main">
+			<div class="footer-brand">
+				<div class="footer-brand__logo"><span>P</span>unto App</div>
+				<p>Tu ferretería de confianza. Herramientas, materiales y repuestos con precios imbatibles y asesoramiento experto para cada proyecto.</p>
+				<p style="margin-top: 10px; font-size: 0.72rem; color: rgba(255,255,255,0.5);">Todos los precios incluyen IVA. Sujeto a disponibilidad.</p>
+			</div>
+			<div class="footer-col">
+				<h4>Comprar</h4>
+				<ul>
+					<li><a href="/productos">Todos los productos</a></li>
+					<li><a href="/productos?categoria=herramientas">Herramientas</a></li>
+					<li><a href="/productos?categoria=electricidad">Electricidad</a></li>
+					<li><a href="/productos?categoria=construccion">Construcción</a></li>
+					<li><a href="/carrito">Carrito</a></li>
+					<li><a href="/mis-pedidos">Mis pedidos</a></li>
+					<li><a href="/mis-favoritos">Mis favoritos</a></li>
+				</ul>
+			</div>
+			<div class="footer-col">
+				<h4>Cuenta</h4>
+				<ul>
+					<li><a href="/login">Ingresar</a></li>
+					<li><a href="/registro">Registrarse</a></li>
+					<li><a href="/carrito">Carrito</a></li>
+					<li><a href="/mis-pedidos">Historial</a></li>
+				</ul>
+			</div>
+			<div class="footer-col">
+				<h4>Ayuda</h4>
+				<ul>
+					<li><a href="#">Envíos gratis</a></li>
+					<li><a href="#">Retiro en tienda</a></li>
+					<li><a href="#">Cambios y devoluciones</a></li>
+					<li><a href="#">Guía de compra</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="footer-bottom">
+			<span>© Punto App — Ferretería. Todos los derechos reservados.</span>
+			<div class="flex items-center gap-3">
+				<ThemeToggle />
+				<span>Todos los precios incluyen IVA.</span>
+			</div>
+		</div>
+	</div>
+</footer>
+
 <style>
 	.promo-ticker {
 		background: #ffd700;
@@ -211,24 +267,76 @@
 	}
 	.promo-ticker__sep { margin: 0 2rem; color: #e85d04; }
 	.scrollbar-none::-webkit-scrollbar { display: none; }
+	.site-footer {
+		background: #001d5e;
+		color: rgba(255,255,255,0.85);
+		margin-top: 40px;
+		border-top: 4px solid #ffd700;
+	}
+	.footer-promo {
+		background: #ffd700;
+		color: #001d5e;
+		font-family: 'Oswald', sans-serif;
+		font-weight: 700;
+		font-size: 1rem;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		text-align: center;
+		padding: 10px;
+		border-bottom: 3px solid #e85d04;
+	}
+	.footer-main {
+		display: grid;
+		grid-template-columns: 2fr 1fr 1fr 1fr;
+		gap: 28px;
+		padding: 28px 0;
+	}
+	.footer-brand__logo {
+		font-family: 'Oswald', sans-serif;
+		font-size: 1.8rem;
+		font-weight: 700;
+		color: #ffd700;
+		margin-bottom: 8px;
+	}
+	.footer-brand__logo span { color: #cc0000; }
+	.footer-brand p {
+		font-size: 0.78rem;
+		line-height: 1.5;
+		color: rgba(255,255,255,0.7);
+		max-width: 280px;
+	}
+	.footer-col h4 {
+		font-family: 'Oswald', sans-serif;
+		font-size: 0.85rem;
+		color: #ffd700;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		margin-bottom: 10px;
+		padding-bottom: 6px;
+		border-bottom: 2px solid #e85d04;
+	}
+	.footer-col ul { display: flex; flex-direction: column; gap: 5px; }
+	.footer-col li a {
+		font-size: 0.78rem;
+		color: rgba(255,255,255,0.7);
+		transition: color 0.1s;
+	}
+	.footer-col li a:hover { color: #ffd700; text-decoration: none; }
+	.footer-bottom {
+		border-top: 1px solid rgba(255,255,255,0.15);
+		padding: 12px 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 8px;
+		font-size: 0.72rem;
+		color: rgba(255,255,255,0.5);
+	}
+	@media (max-width: 900px) {
+		.footer-main { grid-template-columns: 1fr 1fr; }
+	}
+	@media (max-width: 600px) {
+		.footer-main { grid-template-columns: 1fr; }
+	}
 </style>
-
-<CartSheet bind:open={cartOpen} />
-
-<main class="min-h-[70vh]">
-	{@render children()}
-</main>
-
-<footer class="bg-[#003087] text-white mt-12 border-t-4 border-[#e85d04]">
-	<div class="max-w-[1280px] mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
-		<div class="flex items-center gap-2 font-oswald font-bold">
-			<span class="bg-[#ffd700] text-[#003087] px-2 py-1">PUNTO</span> APP
-			<span class="text-xs font-roboto font-normal opacity-70 ml-2">MVP — ferretería</span>
-		</div>
-		<div class="flex items-center gap-4 text-sm">
-			<a href="/" class="hover:underline">Catálogo</a>
-			<a href="/carrito" class="hover:underline">Carrito</a>
-			<ThemeToggle />
-		</div>
-	</div>
-</footer>
