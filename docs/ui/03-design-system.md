@@ -26,8 +26,10 @@ shadcn-svelte, con soporte claro/oscuro.
 
 | Rol | Fuente | Peso/Tamaño clave |
 | --- | ------ | ------------------ |
-| Headings, nav, botones, badges | **Oswald** | 700; hero 48px→32px mobile |
-| Cuerpo y descripciones | **Roboto Condensed** | 400; 14px base |
+| Headings, nav, botones, badges | **Oswald** | 700; hero 56px→38px mobile (+17%) |
+| Cuerpo y descripciones | **Roboto Condensed** | 400; 16px base (+14%) |
+
+> **Escala incrementada** 2026-08-31: todos los tamaños +14–18% para mejorar legibilidad. Hero 48→56, sección 22.4→26, nav 12→14, categoría 14.4→17, body 14→16, small 12→14, badge 13.6→16, botón 19.2→22.
 
 - Entrega: paquetes **@fontsource** self-hosted (sin CDN externo en
   runtime, coherente con contenedores Podman sin dependencias externas).

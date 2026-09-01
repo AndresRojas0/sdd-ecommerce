@@ -50,11 +50,14 @@
 }
 
 @layer base {
+	html {
+		font-size: 17px;
+	}
 	* {
 		@apply border-border;
 	}
 	body {
-		@apply bg-background text-foreground font-roboto;
+		@apply bg-background text-foreground font-roboto text-[16px] leading-[1.45];
 	}
 	h1,
 	h2,
@@ -66,5 +69,13 @@
 	button,
 	[data-font='oswald'] {
 		font-family: 'Oswald', sans-serif;
+	}
+	h1 {
+		font-size: 3.5rem;
+		line-height: 1.1;
+	}
+	h2 {
+		font-size: 1.625rem;
+		line-height: 1.2;
 	}
 }

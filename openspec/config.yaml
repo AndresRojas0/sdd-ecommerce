@@ -1,0 +1,32 @@
+schema: spec-driven
+
+context: |
+  Tech stack: FastAPI 0.115 + SQLAlchemy 2.0 + PostgreSQL 16 (backend), SvelteKit 2.20 + Svelte 5 + Vite 6 + Tailwind 3 (frontend/admin), Podman + public.ecr.aws
+  Architecture: REST API with isolated JWT audiences (store/admin ADR-003), SvelteKit storefront (3000) + isolated admin SPA (3001) -> FastAPI (8000) -> PostgreSQL, named volume punto_pgdata external
+  Testing: pytest 8.0 + pytest-asyncio + httpx TestClient, 37 tests (auth/cart/products/visits), SQLite fallback for local, no coverage tool yet
+  Style: Conventional commits, docs-first SDD (spec before code in docs/), Spanish domain language, mobile-first storefront
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing code patterns (ADR-003/004/005/006) and Spanish domain naming (categoria/producto/pedido)
+      - Respect isolated JWT audiences and role guards
+    tdd: true
+    test_command: "PYTHONPATH=backend pytest -q"
+  verify:
+    test_command: "PYTHONPATH=backend pytest -q"
+    build_command: "npm run build"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
