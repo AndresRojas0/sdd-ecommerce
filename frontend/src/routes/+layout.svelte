@@ -12,6 +12,7 @@
 	import Button from '$lib/components/ui/button.svelte';
 	import CartSheet from '$lib/components/CartSheet.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+	import ToneSelector from '$lib/components/ToneSelector.svelte';
 
 	let { children } = $props();
 	let dropdownOpen = $state(false);
@@ -235,7 +236,8 @@
 		</div>
 		<div class="footer-bottom">
 			<span>© Punto App — Ferretería. Todos los derechos reservados.</span>
-			<div class="flex items-center gap-3">
+			<div class="flex flex-wrap items-center gap-3">
+				<ToneSelector />
 				<ThemeToggle />
 				<span>Todos los precios incluyen IVA.</span>
 			</div>

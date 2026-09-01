@@ -11,6 +11,9 @@
 					var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 					if (t === 'dark' || (!t && prefersDark)) document.documentElement.classList.add('dark');
 					else document.documentElement.classList.remove('dark');
+					var tone = localStorage.getItem('tone');
+					if (tone === 'green' || tone === 'classic') document.documentElement.setAttribute('data-tone', tone);
+					else document.documentElement.setAttribute('data-tone', 'classic');
 				} catch (e) {}
 			})();
 		</script>

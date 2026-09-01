@@ -99,6 +99,21 @@
   --shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
   --shadow-sm: 2px 2px 0 rgba(0, 0, 0, 0.2);
 }
+[data-tone='green'] {
+  --blue: #0e7a5a;
+  --blue-dark: #1c1c1c;
+  --blue-mid: #488779;
+  --yellow: #cbe6d3;
+  --yellow-dark: #98c1b1;
+  --orange: #e07b00;
+  --orange-dark: #b56200;
+  --green: #488779;
+  --green-dark: #35604f;
+  --cream: #f4f6f4;
+  --grey: #d1d2d4;
+  --grey-dark: #7a7c7e;
+  --text: #212121;
+}
 .container {
   width: 100%;
   max-width: 1200px;
