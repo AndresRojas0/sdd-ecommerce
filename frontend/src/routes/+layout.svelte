@@ -96,14 +96,14 @@
 	</div>
 
 	<!-- Header main: logo + buscador + acciones -->
-	<div class="header-main-wrap bg-[#003087] border-b-4 border-[#ffd700]">
+	<div class="header-main-wrap bg-[var(--blue)] border-b-4 border-[var(--yellow)]">
 		<div class="max-w-[1280px] mx-auto px-3 py-2.5 flex items-center gap-3">
 			<a href="/" class="flex items-center gap-2 shrink-0" aria-label="Punto App Inicio">
-				<div class="bg-white border-[3px] border-[#ffd700] px-2 py-1 flex flex-col items-center leading-none">
-					<span class="font-oswald font-bold text-[1.6rem] leading-none text-[#003087] tracking-tight">PUN<span class="text-[#cc0000]">T</span>O</span>
-					<span class="font-roboto text-[0.55rem] text-[#003087] uppercase tracking-widest">Ferretería</span>
+				<div class="bg-white border-[3px] border-[var(--yellow)] px-2 py-1 flex flex-col items-center leading-none">
+					<span class="font-oswald font-bold text-[1.6rem] leading-none text-[var(--blue)] tracking-tight">PUN<span class="text-[var(--red)]">T</span>O</span>
+					<span class="font-roboto text-[0.55rem] text-[var(--blue)] uppercase tracking-widest">Ferretería</span>
 				</div>
-				<span class="hidden sm:inline font-oswald font-bold text-[#ffd700] text-lg tracking-wide">PUNTO APP</span>
+				<span class="hidden sm:inline font-oswald font-bold text-[var(--yellow)] text-lg tracking-wide">PUNTO APP</span>
 			</a>
 
 			<form class="flex-1 flex max-w-[520px] mx-auto" role="search" onsubmit={handleSearch}>
@@ -113,12 +113,12 @@
 					oninput={onSearchInput}
 					placeholder="Buscar productos, SKU, datos técnicos..."
 					aria-label="Buscar productos"
-					class="flex-1 px-3 py-2 border-[3px] border-[#ffd700] border-r-0 text-sm bg-white text-[#1a1f3a] outline-none focus:bg-[#fffef0] placeholder:text-[#888]"
+					class="flex-1 px-3 py-2 border-[3px] border-[var(--yellow)] border-r-0 text-sm bg-white text-[#1a1f3a] outline-none focus:bg-[#fffef0] placeholder:text-[#888]"
 				/>
 				<button
 					type="submit"
 					aria-label="Buscar"
-					class="bg-[#ffd700] border-[3px] border-[#ffd700] px-4 font-oswald font-bold text-sm text-[#001d5e] uppercase tracking-wide hover:brightness-95 flex items-center gap-1"
+					class="bg-[var(--yellow)] border-[3px] border-[var(--yellow)] px-4 font-oswald font-bold text-sm text-[var(--blue-dark)] uppercase tracking-wide hover:brightness-95 flex items-center gap-1"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
 					<span class="hidden sm:inline">Buscar</span>
@@ -130,7 +130,7 @@
 
 			<div class="flex items-center gap-1.5 shrink-0">
 				{#if $user}
-					<a href="/mis-favoritos" class="hidden md:flex flex-col items-center gap-0.5 border-2 border-[#ffd700] text-[#ffd700] px-2.5 py-1 font-oswald font-bold text-[0.65rem] uppercase tracking-wide hover:bg-[#ffd700] hover:text-[#001d5e] no-underline">
+					<a href="/mis-favoritos" class="hidden md:flex flex-col items-center gap-0.5 border-2 border-[var(--yellow)] text-[var(--yellow)] px-2.5 py-1 font-oswald font-bold text-[0.65rem] uppercase tracking-wide hover:bg-[var(--yellow)] hover:text-[var(--blue-dark)] no-underline">
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
 						Favs
 					</a>
@@ -138,20 +138,20 @@
 
 				<button
 					onclick={openCart}
-					class="relative flex flex-col items-center gap-0.5 border-2 border-[#ffd700] text-[#ffd700] px-2.5 py-1 font-oswald font-bold text-[0.65rem] uppercase tracking-wide hover:bg-[#ffd700] hover:text-[#001d5e]"
+					class="relative flex flex-col items-center gap-0.5 border-2 border-[var(--yellow)] text-[var(--yellow)] px-2.5 py-1 font-oswald font-bold text-[0.65rem] uppercase tracking-wide hover:bg-[var(--yellow)] hover:text-[var(--blue-dark)]"
 					aria-label="Carrito"
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
 					Carrito
 					{#if $user && $cartCount > 0}
-						<span class="absolute -top-1.5 -right-1.5 bg-[#cc0000] text-white text-[0.6rem] font-bold w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-[#003087]">{$cartCount}</span>
+						<span class="absolute -top-1.5 -right-1.5 bg-[var(--red)] text-white text-[0.6rem] font-bold w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-[var(--blue)]">{$cartCount}</span>
 					{/if}
 				</button>
 
 				{#if $user}
 					<DropdownMenu bind:open={dropdownOpen}>
 						{#snippet trigger()}
-							<span class="hidden sm:inline-flex items-center gap-1.5 bg-white text-[#003087] px-2.5 py-1 font-oswald text-xs border-2 border-[#ffd700]">{$user.display_name || $user.email}</span>
+							<span class="hidden sm:inline-flex items-center gap-1.5 bg-white text-[var(--blue)] px-2.5 py-1 font-oswald text-xs border-2 border-[var(--yellow)]">{$user.display_name || $user.email}</span>
 						{/snippet}
 						<div class="flex flex-col">
 							<span class="px-3 py-2 text-sm text-muted-foreground border-b">{$user.email}</span>
@@ -161,7 +161,7 @@
 						</div>
 					</DropdownMenu>
 				{:else}
-					<a href="/login" class="flex flex-col items-center gap-0.5 border-2 border-[#ffd700] text-[#ffd700] px-3 py-1 font-oswald font-bold text-[0.65rem] uppercase tracking-wide hover:bg-[#ffd700] hover:text-[#001d5e] no-underline">
+					<a href="/login" class="flex flex-col items-center gap-0.5 border-2 border-[var(--yellow)] text-[var(--yellow)] px-3 py-1 font-oswald font-bold text-[0.65rem] uppercase tracking-wide hover:bg-[var(--yellow)] hover:text-[var(--blue-dark)] no-underline">
 						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 						Ingresar
 					</a>
@@ -171,10 +171,10 @@
 	</div>
 
 	<!-- Nav categorías -->
-	<nav class="nav-bar bg-[#e85d04] border-t-2 border-[#c44b00]" aria-label="Categorías">
+	<nav class="nav-bar bg-[var(--orange)] border-t-2 border-[var(--orange-dark)]" aria-label="Categorías">
 		<div class="max-w-[1280px] mx-auto px-3">
 			<div class="flex items-stretch overflow-x-auto scrollbar-none gap-0" style="scrollbar-width:none">
-				<a href="/productos" class="shrink-0 bg-[#001d5e] text-[#ffd700] px-3 py-2 font-oswald font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 border-r-2 border-[#c44b00] no-underline hover:brightness-110">
+				<a href="/productos" class="shrink-0 bg-[var(--blue-dark)] text-[var(--yellow)] px-3 py-2 font-oswald font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 border-r-2 border-[var(--orange-dark)] no-underline hover:brightness-110">
 					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
 					Todas
 				</a>
@@ -247,8 +247,8 @@
 
 <style>
 	.promo-ticker {
-		background: #ffd700;
-		color: #001d5e;
+		background: var(--yellow);
+		color: var(--blue-dark);
 		font-family: 'Oswald', sans-serif;
 		font-weight: 700;
 		font-size: 0.8rem;
@@ -256,7 +256,7 @@
 		letter-spacing: 0.06em;
 		padding: 5px 0;
 		overflow: hidden;
-		border-bottom: 2px solid #e85d04;
+		border-bottom: 2px solid var(--orange);
 	}
 	.promo-ticker__inner {
 		display: inline-block;
@@ -267,17 +267,17 @@
 		0% { transform: translateX(100vw); }
 		100% { transform: translateX(-100%); }
 	}
-	.promo-ticker__sep { margin: 0 2rem; color: #e85d04; }
+	.promo-ticker__sep { margin: 0 2rem; color: var(--orange); }
 	.scrollbar-none::-webkit-scrollbar { display: none; }
 	.site-footer {
-		background: #001d5e;
+		background: var(--blue-dark);
 		color: rgba(255,255,255,0.85);
 		margin-top: 40px;
-		border-top: 4px solid #ffd700;
+		border-top: 4px solid var(--yellow);
 	}
 	.footer-promo {
-		background: #ffd700;
-		color: #001d5e;
+		background: var(--yellow);
+		color: var(--blue-dark);
 		font-family: 'Oswald', sans-serif;
 		font-weight: 700;
 		font-size: 1rem;
@@ -285,7 +285,7 @@
 		letter-spacing: 0.08em;
 		text-align: center;
 		padding: 10px;
-		border-bottom: 3px solid #e85d04;
+		border-bottom: 3px solid var(--orange);
 	}
 	.footer-main {
 		display: grid;
@@ -297,7 +297,7 @@
 		font-family: 'Oswald', sans-serif;
 		font-size: 1.8rem;
 		font-weight: 700;
-		color: #ffd700;
+		color: var(--yellow);
 		margin-bottom: 8px;
 	}
 	.footer-brand__logo span { color: #cc0000; }
@@ -310,12 +310,12 @@
 	.footer-col h4 {
 		font-family: 'Oswald', sans-serif;
 		font-size: 0.85rem;
-		color: #ffd700;
+		color: var(--yellow);
 		text-transform: uppercase;
 		letter-spacing: 0.06em;
 		margin-bottom: 10px;
 		padding-bottom: 6px;
-		border-bottom: 2px solid #e85d04;
+		border-bottom: 2px solid var(--orange);
 	}
 	.footer-col ul { display: flex; flex-direction: column; gap: 5px; }
 	.footer-col li a {
@@ -323,7 +323,7 @@
 		color: rgba(255,255,255,0.7);
 		transition: color 0.1s;
 	}
-	.footer-col li a:hover { color: #ffd700; text-decoration: none; }
+	.footer-col li a:hover { color: var(--yellow); text-decoration: none; }
 	.footer-bottom {
 		border-top: 1px solid rgba(255,255,255,0.15);
 		padding: 12px 0;

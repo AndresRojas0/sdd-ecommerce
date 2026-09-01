@@ -3,15 +3,20 @@
 	import Badge from '$lib/components/ui/badge.svelte';
 	import CategoryBadge from '$lib/components/CategoryBadge.svelte';
 	import StarRating from '$lib/components/StarRating.svelte';
+	import { tone } from '$lib/stores/tone.js';
 
 	let { product } = $props();
 
-	const PLACEHOLDER = 'https://placehold.co/400x400/003087/ffd700?text=Punto+App';
+	const PLACEHOLDER_CLASSIC = 'https://placehold.co/400x400/003087/ffd700?text=Punto+App';
+	const PLACEHOLDER_GREEN = 'https://placehold.co/400x400/0e7a5a/cbe6d3?text=Punto+App';
+
+	let currentTone = $state('classic');
+	tone.subscribe((v) => (currentTone = v));
 
 	let cats = $derived(product.categorias || []);
 	let visibleCats = $derived(cats.slice(0, 2));
 	let extra = $derived(cats.length > 2 ? cats.length - 2 : 0);
-	let img = $derived(product.imagen || PLACEHOLDER);
+	let img = $derived(product.imagen || (currentTone === 'green' ? PLACEHOLDER_GREEN : PLACEHOLDER_CLASSIC));
 </script>
 
 <a href="/producto/{product.slug}" class="block group">
