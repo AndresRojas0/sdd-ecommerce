@@ -53,9 +53,9 @@
 		e.preventDefault();
 		const q = searchQuery.trim();
 		if (q.length === 0) {
-			goto('/', { replaceState: true });
+			goto('/productos', { replaceState: true });
 		} else {
-			goto(`/?q=${encodeURIComponent(q)}`, { replaceState: true });
+			goto(`/productos?q=${encodeURIComponent(q)}`, { replaceState: true });
 		}
 	}
 	function onSearchInput(e) {
@@ -64,14 +64,14 @@
 		searchDebounce = setTimeout(() => {
 			const q = searchQuery.trim();
 			if (q.length >= 2 || q.length === 0) {
-				if (q.length === 0) goto('/', { replaceState: true });
-				else goto(`/?q=${encodeURIComponent(q)}`, { replaceState: true });
+				if (q.length === 0) goto('/productos', { replaceState: true });
+				else goto(`/productos?q=${encodeURIComponent(q)}`, { replaceState: true });
 			}
 		}, 300);
 	}
 	function clearSearch() {
 		searchQuery = '';
-		goto('/', { replaceState: true });
+		goto('/productos', { replaceState: true });
 	}
 </script>
 
@@ -173,12 +173,12 @@
 	<nav class="nav-bar bg-[#e85d04] border-t-2 border-[#c44b00]" aria-label="Categorías">
 		<div class="max-w-[1280px] mx-auto px-3">
 			<div class="flex items-stretch overflow-x-auto scrollbar-none gap-0" style="scrollbar-width:none">
-				<a href="/" class="shrink-0 bg-[#001d5e] text-[#ffd700] px-3 py-2 font-oswald font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 border-r-2 border-[#c44b00] no-underline hover:brightness-110">
+				<a href="/productos" class="shrink-0 bg-[#001d5e] text-[#ffd700] px-3 py-2 font-oswald font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 border-r-2 border-[#c44b00] no-underline hover:brightness-110">
 					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
 					Todas
 				</a>
 				{#each categorias as cat}
-					<a href="/?categoria={cat.slug}" class="shrink-0 flex items-center px-3 py-2 text-white font-oswald font-semibold text-xs uppercase tracking-wide whitespace-nowrap border-r border-white/20 hover:bg-[#c44b00] no-underline">
+					<a href="/productos?categoria={cat.slug}" class="shrink-0 flex items-center px-3 py-2 text-white font-oswald font-semibold text-xs uppercase tracking-wide whitespace-nowrap border-r border-white/20 hover:bg-[#c44b00] no-underline">
 						{cat.nombre}
 					</a>
 				{/each}
