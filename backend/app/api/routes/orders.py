@@ -20,6 +20,7 @@ from app.models.producto import Producto
 from app.models.user import User
 from app.schemas.pedido import (
     ConsolidateRequest,
+    CreateOrderOnBehalfRequest,
     OrdenCompraResponse,
     PedidoItemResponse,
     PedidoResponse,
@@ -299,6 +300,64 @@ def admin_list_orders(
     pedidos = db.scalars(base.order_by(Pedido.created_at.desc()).limit(limit).offset(offset)).all()
     items = [_pedido_to_response(db, p).model_dump() for p in pedidos]
     return {"total": total, "limit": limit, "offset": offset, "items": items}
+
+
+@admin_router.post("", response_model=PedidoResponse, status_code=status.HTTP_201_CREATED)
+def create_order_on_behalf(
+    body: CreateOrderOnBehalfRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("vendedor", "administrador")),
+):
+    """UC-V08: Vendedor crea pedido en nombre de un cliente."""
+    cliente = db.get(User, body.user_id)
+    if not cliente or not cliente.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cliente no encontrado o inactivo")
+    if not body.items or len(body.items) == 0:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Se requiere al menos un item")
+
+    subtotal = Decimal("0")
+    validated: list[tuple[uuid.UUID, Decimal, Decimal]] = []  # (product_id, cantidad, precio)
+    for raw in body.items:
+        pid = raw.get("product_id")
+        cant = raw.get("cantidad")
+        if not pid or cant is None:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Cada item requiere product_id y cantidad")
+        try:
+            pid_uuid = uuid.UUID(str(pid))
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"product_id inválido {pid}")
+        prod = db.get(Producto, pid_uuid)
+        if not prod or prod.deleted_at is not None or prod.estado_publicacion != "publicado":
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Producto {pid} no disponible")
+        cantidad = Decimal(str(cant))
+        if cantidad <= 0:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="cantidad debe ser >0")
+        price = prod.precio
+        validated.append((pid_uuid, cantidad, price))
+        subtotal += cantidad * price
+
+    pedido = Pedido(
+        user_id=cliente.id,
+        vendedor_id=current_user.id,
+        estado="pendiente",
+        subtotal=subtotal,
+        total=subtotal,
+    )
+    db.add(pedido)
+    db.flush()
+    for pid_uuid, cantidad, price in validated:
+        db.add(
+            PedidoItem(
+                pedido_id=pedido.id,
+                product_id=pid_uuid,
+                cantidad=cantidad,
+                precio_unitario=price,
+                subtotal=cantidad * price,
+            )
+        )
+    db.commit()
+    db.refresh(pedido)
+    return _pedido_to_response(db, pedido)
 
 
 @admin_router.patch("/{pedido_id}/reassign", response_model=PedidoResponse)

@@ -18,9 +18,10 @@ router = APIRouter(prefix="/admin/users", tags=["admin-users"])
 @router.get("", response_model=dict)
 def list_users(
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_role("administrador", "vendedor")),
     role: str | None = Query(default=None),
     is_active: bool | None = Query(default=None),
+    search: str | None = Query(default=None, description="Filtra por email o display_name (UC-V03)"),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ):
@@ -29,6 +30,11 @@ def list_users(
         filters.append(User.role == role)
     if is_active is not None:
         filters.append(User.is_active == is_active)
+    if search:
+        from sqlalchemy import or_
+
+        like = f"%{search}%"
+        filters.append(or_(User.email.ilike(like), User.display_name.ilike(like)))
     base = select(User)
     count_base = select(func.count()).select_from(User)
     if filters:

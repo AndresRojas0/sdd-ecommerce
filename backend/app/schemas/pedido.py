@@ -52,6 +52,11 @@ class ConsolidateRequest(BaseModel):
     pedido_ids: list[uuid.UUID]
 
 
+class CreateOrderOnBehalfRequest(BaseModel):
+    user_id: uuid.UUID
+    items: list[dict]  # cada item: product_id, cantidad — validado en handler (UC-V08)
+
+
 class OrdenCompraResponse(BaseModel):
     id: uuid.UUID
     numero: str
