@@ -4,6 +4,8 @@ from app.models.calificacion import Calificacion  # noqa: F401
 from app.models.carrito import Carrito  # noqa: F401
 from app.models.carrito_item import CarritoItem  # noqa: F401
 from app.models.categoria import Categoria  # noqa: F401
+from app.models.coleccion import Coleccion  # noqa: F401
+from app.models.coleccion_producto import ColeccionProducto  # noqa: F401
 from app.models.etiqueta import Etiqueta  # noqa: F401
 from app.models.favorito import Favorito  # noqa: F401
 from app.models.factura import Factura  # noqa: F401
@@ -25,6 +27,8 @@ __all__ = [
     "Carrito",
     "CarritoItem",
     "Categoria",
+    "Coleccion",
+    "ColeccionProducto",
     "Etiqueta",
     "Factura",
     "Favorito",

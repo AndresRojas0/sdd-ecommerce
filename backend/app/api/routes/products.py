@@ -36,6 +36,35 @@ from app.schemas.product import (
 router = APIRouter(prefix="/products", tags=["products"])
 
 
+def _validate_categorias_leaf(db: Session, categoria_ids: list[uuid.UUID]) -> None:
+    """RN-01/RN-38: al menos una categoría hoja (nivel 2) si existe rama con hijos.
+
+    - Si alguna categoría asignada es nivel 2 -> OK.
+    - Si ninguna es nivel 2 pero alguna raíz asignada tiene hijos -> 422 (requiere hoja).
+    - Si todas son raíces sin hijos -> OK (retrocompatibilidad MVP).
+    """
+    if not categoria_ids:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Al menos una categoría (RN-01)")
+    cats = []
+    for cid in categoria_ids:
+        c = db.get(Categoria, cid)
+        if not c:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Categoría {cid} no existe")
+        cats.append(c)
+    has_leaf = any(c.nivel == 2 for c in cats)
+    if has_leaf:
+        return
+    # Ninguna hoja: verificar si alguna raíz tiene hijos -> requiere hoja
+    for c in cats:
+        has_children = db.scalar(select(Categoria.id).where(Categoria.parent_id == c.id).limit(1))
+        if has_children is not None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Debe asignar al menos una subcategoría hoja (nivel 2) — RN-38",
+            )
+    # Si ninguna tiene hijos, permitir nivel 1 (MVP fallback)
+
+
 def _to_response(prod: Producto, db: Session) -> ProductResponse:
     # Load related for briefs
     # If relationships already loaded, use them; else query
@@ -105,10 +134,8 @@ def create_product(
     unidad = db.get(UnidadMedida, body.unidad_venta_id)
     if not unidad:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="unidad_venta_id no existe")
-    # Validate categorias
-    for cid in body.categoria_ids:
-        if not db.get(Categoria, cid):
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Categoría {cid} no existe")
+    # Validate categorias — RN-01/RN-38 leaf check
+    _validate_categorias_leaf(db, body.categoria_ids)
     if body.etiqueta_ids:
         for eid in body.etiqueta_ids:
             if not db.get(Etiqueta, eid):
@@ -343,11 +370,7 @@ def update_product(
         prod.unidad_venta_id = body.unidad_venta_id
     # Categories/tags replacement
     if body.categoria_ids is not None:
-        if len(body.categoria_ids) < 1:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Al menos una categoría (RN-01)")
-        for cid in body.categoria_ids:
-            if not db.get(Categoria, cid):
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Categoría {cid} no existe")
+        _validate_categorias_leaf(db, body.categoria_ids)
         db.execute(delete(ProductoCategoria).where(ProductoCategoria.product_id == prod.id))
         for cid in body.categoria_ids:
             db.add(ProductoCategoria(product_id=prod.id, categoria_id=cid))

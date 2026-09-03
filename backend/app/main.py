@@ -17,6 +17,7 @@ from app.api.routes.admin_users import router as admin_users_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.carts import router as carts_router
 from app.api.routes.categorias import router as categorias_router
+from app.api.routes.colecciones import router as colecciones_router
 from app.api.routes.etiquetas import router as etiquetas_router
 from app.api.routes.favorites import router as favorites_router
 from app.api.routes.health import router as health_router
@@ -64,6 +65,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(admin_users_router)
 app.include_router(categorias_router)
+app.include_router(colecciones_router)
 app.include_router(etiquetas_router)
 app.include_router(unidades_router)
 app.include_router(products_router)

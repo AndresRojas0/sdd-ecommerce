@@ -61,6 +61,8 @@ class CategoriaBrief(BaseModel):
     nombre: str
     slug: str
     color: str
+    parent_id: uuid.UUID | None = None
+    nivel: int | None = None
 
     model_config = {"from_attributes": True}
 

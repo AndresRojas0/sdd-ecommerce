@@ -1,4 +1,4 @@
-"""Categoria schemas — RN-01, RN-20."""
+"""Categoria schemas — RN-01, RN-38, RN-20."""
 from __future__ import annotations
 
 import re
@@ -14,6 +14,7 @@ class CategoriaCreate(BaseModel):
     nombre: str
     slug: str
     color: str
+    parent_id: uuid.UUID | None = None
 
     @field_validator("color")
     @classmethod
@@ -41,6 +42,7 @@ class CategoriaUpdate(BaseModel):
     nombre: str | None = None
     slug: str | None = None
     color: str | None = None
+    parent_id: uuid.UUID | None = None
 
     @field_validator("color")
     @classmethod
@@ -55,6 +57,15 @@ class CategoriaResponse(BaseModel):
     nombre: str
     slug: str
     color: str
+    parent_id: uuid.UUID | None = None
+    nivel: int
     created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class CategoriaTreeResponse(CategoriaResponse):
+    """Respuesta árbol: raíz con hijas anidadas."""
+
+    children: list[CategoriaResponse] = []
