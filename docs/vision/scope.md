@@ -11,6 +11,10 @@
 - Contador de visitas por producto (con deduplicación de recargas) y contador de guardados.
 - Gestión de favoritos (guardar productos).
 - Carrito con productos y cantidades; previsualización antes de generar el pedido.
+- Flujo de pedidos extendido: `pendiente → aceptado (En preparación) → facturado → en_logistica → entregado` + `rechazado` terminal, con kanban de 5 columnas (Recibido / En preparación / Facturación / Logística / Entregado) (RN-28).
+- Stock por producto (`stock` 1:1 + `movimientos_stock` reserva/confirmacion/devolucion) acoplado a transiciones de pedido (RN-35).
+- Factura fiscal por orden de compra (`facturas` 1:1 con OC, `numero_fiscal` único) (RN-36).
+- Totales del día: widget de dashboard `SUM(facturas.total)` del día corriente, no columna kanban (RN-37).
 - Calificación de productos.
 - Productos con precio obligatorio e imagen única opcional (nula en la primera etapa).
 
@@ -36,6 +40,11 @@
 ## Decisiones abiertas
 
 1. Algoritmo de descuentos y su mecánica (% vs. precio final, vigencia) — único criterio de orden pendiente de definición fina.
+2. Ajustes manuales de stock / inventario (tipo `ajuste` en `movimientos_stock`) — fuera del MVP inicial.
+
+## Flujo extendido confirmado por negocio
+
+Máquina de pedidos + stock + factura (RN-28/RN-35/RN-36/RN-37) está **en alcance** y confirmada. Implica: kanban de 5 columnas + widget totales del día, `stock`/`movimientos_stock` y `facturas` en el modelo físico (`domain/data-model.md` §16-17), y UC-AD25..AD28 / UC-V10..V11 en los casos de uso.
 
 ## Decisiones resueltas (adicionales)
 

@@ -22,7 +22,7 @@ Actor: usuario autenticado con rol Comprador. Incluye todo lo del
 | UC-B06 | Editar pedido | Solo en estado `pendiente`: cambia cantidades o productos. |
 | UC-B06a | Duplicar pedido rechazado | Crea un nuevo pedido `pendiente` copiando las líneas del rechazado para editarlas; el motivo del rechazo queda visible (RN-28). |
 | UC-B07 | Eliminar pedido | Solo en estado `pendiente`; si opta por darse de baja puede eliminarlos también (RN-19). |
-| UC-B08 | Consultar sus pedidos y su estado | Ve el ciclo completo con estados `pendiente` / `aceptado` (+ orden de compra) / `rechazado` (con motivo), y fecha de cada paso (RN-18, RN-28). |
+| UC-B08 | Consultar sus pedidos y su estado | Ve el ciclo completo `pendiente → aceptado (En preparación) → facturado → en_logistica → entregado` + `rechazado` (con motivo y fecha de cada paso). Facturado expone datos de factura vía OC (RN-36); totales del día no visibles al comprador (RN-37 solo dashboard staff). (RN-18, RN-28). |
 
 ## Calificaciones
 

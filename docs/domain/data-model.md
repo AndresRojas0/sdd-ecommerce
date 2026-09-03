@@ -1,6 +1,6 @@
 # Modelo de datos — Esquema físico PostgreSQL
 
-> Derivado de `domain/domain-model.md` y de las reglas `RN-01`..`RN-34` (`requirements/business-rules.md`), `requirements/functional-requirements.md`, `requirements/authentication.md` y los ADR `001`, `002`, `006`, `007`. Stack: **PostgreSQL 16 · SQLAlchemy 2.0 · Alembic · Python 3.12**. Convenciones: claves primarias `UUIDv4`, tiempos `TIMESTAMPTZ`, `snake_case` en identificadores, `gen_random_uuid()` como default de PK, `now()` para marcas temporales.
+> Derivado de `domain/domain-model.md` y de las reglas `RN-01`..`RN-37` (`requirements/business-rules.md`), `requirements/functional-requirements.md`, `requirements/authentication.md` y los ADR `001`, `002`, `006`, `007`. Stack: **PostgreSQL 16 · SQLAlchemy 2.0 · Alembic · Python 3.12**. Convenciones: claves primarias `UUIDv4`, tiempos `TIMESTAMPTZ`, `snake_case` en identificadores, `gen_random_uuid()` como default de PK, `now()` para marcas temporales.
 
 ## Convenciones generales
 
@@ -95,7 +95,7 @@ Seed obligatorio (`RN-23`): `unidades`, `cm`, `m`, `kg` (al menos).
 
 ## 5. `productos`
 
-Entidad central. Precio obligatorio (`RN-11`), imagen nullable (`RN-13`), unidad de venta (`RN-23`), publicación/oculto (`RN-31`), borrado lógico (`RN-32`), contadores cacheados (`RN-08`/`RN-09`/`RN-30`/`RN-21`).
+Entidad central. Precio obligatorio (`RN-11`), imagen nullable (`RN-13`), unidad de venta (`RN-23`), publicación/oculto (`RN-31`), borrado lógico (`RN-32`), contadores cacheados (`RN-08`/`RN-09`/`RN-30`/`RN-21`). Stock **no** vive en esta tabla; ver `stock` (RN-35, §16).
 
 | Columna | Tipo | Restricciones | Descripción |
 |---------|------|---------------|-------------|
@@ -243,14 +243,14 @@ Restricciones: `UNIQUE (carrito_id, product_id)` — un renglón por producto. �
 
 ## 13. `pedidos`
 
-`RN-26` (atributos mínimos), `RN-28` (estados y ciclo de vida), `RN-27`/`ADR-007` (reasignación), `RN-29` (consolidación N:1), `RN-18`/`RN-19`.
+`RN-26` (atributos mínimos), `RN-28` (máquina extendida), `RN-27`/`ADR-007` (reasignación), `RN-29` (consolidación N:1), `RN-18`/`RN-19`, `RN-35` (stock), `RN-36` (factura vía OC).
 
 | Columna | Tipo | Restricciones | Descripción |
 |---------|------|---------------|-------------|
 | `id` | `UUID` | `PK DEFAULT gen_random_uuid()` | PK |
 | `user_id` | `UUID` | `FK -> users.id ON DELETE RESTRICT NOT NULL` | Cliente creador (`RN-26`); `RESTRICT` preserva historial |
 | `vendedor_id` | `UUID` | `FK -> users.id ON DELETE SET NULL NULL` | Vendedor asignado; NULL hasta asignar; reasignable si `pendiente` (`RN-27`) |
-| `estado` | `VARCHAR(30)` | `NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente','aceptado','rechazado'))` | Estado (`RN-28`) |
+| `estado` | `VARCHAR(30)` | `NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente','aceptado','facturado','en_logistica','entregado','rechazado'))` | Estado — máquina extendida (`RN-28`): `pendiente → aceptado → facturado → en_logistica → entregado`, más `rechazado` terminal |
 | `motivo_rechazo` | `TEXT` | `NULL CHECK (motivo_rechazo IS NULL OR estado='rechazado')` | Motivo si rechazado (`RN-28`) |
 | `subtotal` | `NUMERIC(12,2)` | `NOT NULL CHECK (subtotal >= 0)` | Suma de `pedido_items.subtotal` |
 | `total` | `NUMERIC(12,2)` | `NOT NULL CHECK (total >= 0)` | Total (igual a subtotal en MVP; reserva descuentos) |
@@ -262,10 +262,12 @@ Restricciones: `UNIQUE (carrito_id, product_id)` — un renglón por producto. �
 
 Reglas de aplicación (no CHECK simples):
 
-- Solo `pendiente` es editable/eliminable por su `user_id`; `DELETE` físico solo si `pendiente`; `aceptado`/`rechazado` son terminales (`RN-28`, `TC-RN28-01`).
+- Solo `pendiente` es editable/eliminable por su `user_id`; `DELETE` físico solo si `pendiente`; `rechazado`/`entregado` son terminales (`RN-28`, `TC-RN28-01`).
 - `rechazado` solo admite duplicación como nuevo `pendiente` con `motivo_rechazo` visible.
 - Reasignación `vendedor_id` solo si `estado='pendiente'` y por `role='administrador'` con auditoría (`RN-27`, `TC-RN27-01`).
-- Consolidación (`RN-29`): solo `pendiente`, mismo `user_id`, todos pasan a `aceptado` juntos al crear la OC.
+- Consolidación (`RN-29`): solo `pendiente`, mismo `user_id`, todos pasan a `aceptado` juntos al crear la OC; luego avanzan juntos a `facturado` al facturar la OC (RN-36).
+- Transiciones de estado (`RN-28`): `pendiente → aceptado` (Vendedor/Admin, reserva RN-35), `pendiente → rechazado` (Vendedor/Admin), `aceptado → facturado` (solo Admin, confirmación RN-35 + Factura RN-36), `aceptado → rechazado` (Vendedor/Admin, devolución RN-35), `facturado → en_logistica` (Admin/Logística), `en_logistica → entregado` (Admin/Logística). Validación en servicio con `409/422` si transición ilegal o actor no autorizado.
+- Efectos stock (RN-35) se ejecutan en la misma transacción que el cambio de estado; ver §16 `stock` / `movimientos_stock`.
 
 ## 14. `pedido_items`
 
@@ -284,7 +286,7 @@ Líneas del pedido (`RN-26`). Snapshot de precio.
 
 ## 15. `ordenes_compra`
 
-Documento comercial (`RN-18`, `RN-29`). N pedidos → 1 OC. `RN-27`: OC congelada con atribución original.
+Documento comercial (`RN-18`, `RN-29`). N pedidos → 1 OC. `RN-27`: OC congelada con atribución original. Unidad facturable para `facturas` (RN-36): 1 OC → 1 Factura.
 
 | Columna | Tipo | Restricciones | Descripción |
 |---------|------|---------------|-------------|
@@ -299,9 +301,75 @@ Documento comercial (`RN-18`, `RN-29`). N pedidos → 1 OC. `RN-27`: OC congelad
 
 Secuencia para `numero`: `SEQUENCE oc_numero_seq` o función `nextval` + formateo `OC-YYYY-NNNN` en aplicación; alternativa `GENERATED` con trigger `BEFORE INSERT`.
 
-Relación: `pedidos.orden_compra_id -> ordenes_compra.id` (N:1). No hay tabla de join adicional.
+Relación: `pedidos.orden_compra_id -> ordenes_compra.id` (N:1). No hay tabla de join adicional. `facturas.orden_compra_id -> ordenes_compra.id` (1:1, RN-36) completa el triángulo `pedidos N — 1 ordenes_compra 1 — 1 facturas`.
 
-## 16. `refresh_tokens`
+## 16. `stock` y `movimientos_stock` (RN-35)
+
+Stock físico por producto. Separado de `productos` para no mezclar catálogo con disponibilidad. Un producto sin fila en `stock` se considera sin stock inicial (se crea con ceros al dar de alta el producto o por migración).
+
+### 16.1 `stock`
+
+| Columna | Tipo | Restricciones | Descripción |
+|---------|------|---------------|-------------|
+| `product_id` | `UUID` | `PK, FK -> productos.id ON DELETE CASCADE NOT NULL` | Producto (PK y FK, relación 1:1) |
+| `cantidad_disponible` | `NUMERIC(10,2)` | `NOT NULL DEFAULT 0 CHECK (cantidad_disponible >= 0)` | Unidades libres para vender |
+| `cantidad_reservada` | `NUMERIC(10,2)` | `NOT NULL DEFAULT 0 CHECK (cantidad_reservada >= 0)` | Unidades comprometidas por pedidos `aceptado` aún no facturados |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Último movimiento (trigger) |
+
+Índices: `PK (product_id)` es el único índice necesario; `FK` indexado implícitamente. Trigger: `updated_at = now()` en `UPDATE`.
+
+Invariantes (aplicación + CHECK):
+
+- `cantidad_disponible >= 0`, `cantidad_reservada >= 0` siempre.
+- `aceptado` (reserva): `disponible -= Σ pedido_items.cantidad`, `reservada += Σ cantidad`; falla si `disponible` quedaría negativa (validar antes de transicionar; `409 Conflict` si sin stock).
+- `facturado` (confirmación): `reservada -= Σ cantidad`; `disponible` no cambia (ya se descontó al reservar).
+- `aceptado → rechazado` (devolución): `disponible += Σ cantidad`, `reservada -= Σ cantidad`.
+
+### 16.2 `movimientos_stock`
+
+Historial auditable de cada cambio de stock. Un movimiento por transición que afecta stock.
+
+| Columna | Tipo | Restricciones | Descripción |
+|---------|------|---------------|-------------|
+| `id` | `UUID` | `PK DEFAULT gen_random_uuid()` | PK |
+| `product_id` | `UUID` | `FK -> productos.id ON DELETE CASCADE NOT NULL` | Producto afectado |
+| `tipo` | `VARCHAR(20)` | `NOT NULL CHECK (tipo IN ('reserva','confirmacion','devolucion'))` | Tipo de movimiento (RN-35) |
+| `cantidad` | `NUMERIC(10,2)` | `NOT NULL CHECK (cantidad > 0)` | Cantidad movida (positiva; el signo lo da el tipo) |
+| `pedido_id` | `UUID` | `FK -> pedidos.id ON DELETE SET NULL NULL` | Pedido origen; `SET NULL` si el pedido pendiente se elimina |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Momento del movimiento |
+
+Índices: `idx_mov_stock_product_id (product_id)`, `idx_mov_stock_pedido_id (pedido_id)`, `idx_mov_stock_created_at (created_at DESC)`, `idx_mov_stock_product_tipo (product_id, tipo)`.
+
+Notas:
+
+- `reserva` y `devolucion` son inversos; `confirmacion` solo decrementa `reservada`.
+- La cantidad se registra por producto; un pedido con N líneas genera N filas (una por `pedido_items.product_id`).
+- No hay `ajuste_manual` en MVP; se incorporará si el negocio requiere correcciones de inventario.
+
+## 17. `facturas` (RN-36, RN-37)
+
+Documento fiscal emitido desde una orden de compra aceptada. 1:1 con `ordenes_compra`.
+
+| Columna | Tipo | Restricciones | Descripción |
+|---------|------|---------------|-------------|
+| `id` | `UUID` | `PK DEFAULT gen_random_uuid()` | PK |
+| `orden_compra_id` | `UUID` | `FK -> ordenes_compra.id ON DELETE RESTRICT UNIQUE NOT NULL` | OC origen (UNIQUE impone 1:1); `RESTRICT` impide borrar OC facturada |
+| `numero_fiscal` | `VARCHAR(30)` | `UNIQUE NOT NULL` | Número fiscal único e inmutable, ej. `F-2026-0001` (secuencia) |
+| `total` | `NUMERIC(12,2)` | `NOT NULL CHECK (total >= 0)` | Total facturado (snapshot de `ordenes_compra.total` al facturar) |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Fecha de emisión (para totales del día RN-37) |
+| `created_by` | `UUID` | `FK -> users.id ON DELETE SET NULL NULL` | Admin que facturó |
+
+Índices: `UNIQUE (orden_compra_id)`, `UNIQUE (numero_fiscal)`, `idx_facturas_created_at (created_at)`, `idx_facturas_created_by`.
+
+Secuencia para `numero_fiscal`: `SEQUENCE factura_numero_seq` + formateo `F-YYYY-NNNN` en aplicación o trigger `BEFORE INSERT` (análogo a `ordenes_compra.numero`).
+
+Reglas de aplicación:
+
+- Solo facturable si la OC existe y todos sus pedidos están en `aceptado` (o ya `facturado` tras la operación) y no existe factura previa para esa OC (`UNIQUE` lo garantiza a nivel físico).
+- `numero_fiscal` se asigna una vez y no se reedita.
+- Totales del día (RN-37): `SELECT COALESCE(SUM(total),0) FROM facturas WHERE created_at::date = CURRENT_DATE` (o `created_at >= date_trunc('day', now())`). Widget de dashboard, no columna kanban.
+
+## 18. `refresh_tokens`
 
 `ADR-003`: refresh rotativo, familia para detección de reuso, persistencia hasheada.
 
@@ -323,7 +391,7 @@ Cambio de contraseña (`RF-29`): `UPDATE refresh_tokens SET revoked=true WHERE u
 
 > Dos audiencias aisladas (tienda vs admin, `ADR-003`/`ADR-005`) comparten el mismo esquema físico; la separación es por `aud`/`scope` en el JWT y por nombres de cookie/secretos distintos en la capa de aplicación, no por tablas separadas.
 
-## 17. `alembic_version`
+## 19. `alembic_version`
 
 Tabla creada automáticamente por Alembic. No modelar en ORM.
 
@@ -366,6 +434,13 @@ Tabla creada automáticamente por Alembic. No modelar en ORM.
 | `pedidos` | `idx_pedidos_orden_compra_id` | `orden_compra_id` | btree | Consolidación (`RN-29`) |
 | `pedido_items` | `idx_pedido_items_pedido_id` | `pedido_id` | btree | Líneas |
 | `ordenes_compra` | `idx_oc_created_at` | `created_at` | btree | Listado cronológico |
+| `stock` | `stock_pkey` | `product_id` | btree PK | Stock 1:1 (`RN-35`) |
+| `movimientos_stock` | `idx_mov_stock_product_id` | `product_id` | btree | Historial stock (`RN-35`) |
+| `movimientos_stock` | `idx_mov_stock_pedido_id` | `pedido_id` | btree | Trazabilidad pedido |
+| `movimientos_stock` | `idx_mov_stock_created_at` | `created_at DESC` | btree | Auditoría |
+| `facturas` | `idx_facturas_created_at` | `created_at` | btree | Totales día (`RN-37`) |
+| `facturas` | `idx_facturas_numero_fiscal` | `numero_fiscal` | btree unique | Fiscal (`RN-36`) |
+| `facturas` | `idx_facturas_orden_compra_id` | `orden_compra_id` | btree unique | 1:1 OC (`RN-36`) |
 | `refresh_tokens` | `idx_rt_family_id` | `family_id` | btree | Detección reuso |
 | `refresh_tokens` | `idx_rt_token_hash` | `token_hash` | btree unique | Lookup |
 
@@ -405,19 +480,27 @@ CREATE INDEX idx_visitas_recientes ON visitas (product_id, visited_at DESC)
 | `UNIQUE user_id` | `carritos` | `RN-34` | Un carrito por usuario |
 | `UNIQUE (carrito_id, product_id)` | `carrito_items` | `RN-12` | Una línea por producto en carrito |
 | `CHECK cantidad > 0` (`NUMERIC(10,2)`) | `carrito_items`, `pedido_items` | `RN-23` | Fraccional para `kg`/`m` |
-| `CHECK estado IN (...)` | `pedidos` | `RN-28` | Máquina de estados |
+| `CHECK estado IN (...)` | `pedidos` | `RN-28` | Máquina extendida `pendiente/aceptado/facturado/en_logistica/entregado/rechazado` |
 | `CHECK motivo_rechazo` solo si `rechazado` | `pedidos` | `RN-28` | Motivo visible |
 | `FK vendedor_id SET NULL` | `pedidos` | `RN-27`, `ADR-007` | Reasignable si pendiente |
-| `FK orden_compra_id SET NULL` | `pedidos` | `RN-29` | Consolidación N:1 |
+| `FK orden_compra_id SET NULL` | `pedidos` | `RN-29` | Consolidación N:1; facturación vía OC (RN-36) |
 | Solo `pendiente` editable/eliminable | `pedidos` (app) | `RN-28` | `409/422` si no |
+| Transiciones extendidas + actor | `pedidos` (app) | `RN-28` | `pendiente→aceptado` (Vend/Admin), `→facturado` (Admin), `→en_logistica/entregado` (Admin/Logística) |
+| `CHECK cantidad_disponible/reservada >=0` | `stock` | `RN-35` | Piso cero stock |
+| `PK product_id FK` 1:1 | `stock` | `RN-35` | Un stock por producto |
+| `CHECK tipo IN (...)` | `movimientos_stock` | `RN-35` | `reserva/confirmacion/devolucion` |
+| `FK pedido_id SET NULL` | `movimientos_stock` | `RN-35` | Trazabilidad |
+| `UNIQUE orden_compra_id` + `RESTRICT` | `facturas` | `RN-36` | 1 factura por OC; OC facturada no borrable |
+| `UNIQUE numero_fiscal` | `facturas` | `RN-36` | Fiscal único e inmutable |
+| Totales del día (widget) | `facturas` (app) | `RN-37` | `SUM(total) WHERE created_at::date = CURRENT_DATE` |
 | Validación `password_hash` política | `users` (app) | `RN-15` | Hash + validación previa |
 | `UNIQUE token_hash`, `family_id` | `refresh_tokens` | `ADR-003` | Rotación y reuso |
 | `revoked` en cambio de contraseña | `refresh_tokens` (app) | `RF-29` | Invalida sesiones |
 | `UNIQUE numero` | `ordenes_compra` | `RN-29` | `OC-YYYY-NNNN` |
-| `ON DELETE CASCADE` en joins | `producto_*`, `favoritos`, `calificaciones` | Integridad | Limpieza huérfanos |
-| `ON DELETE RESTRICT` en históricos | `pedido_items.product_id`, `pedidos.user_id` | `RN-32`, `RN-19` | Preserva documentos |
+| `ON DELETE CASCADE` en joins | `producto_*`, `favoritos`, `calificaciones`, `stock`, `movimientos_stock` | Integridad | Limpieza huérfanos |
+| `ON DELETE RESTRICT` en históricos | `pedido_items.product_id`, `pedidos.user_id`, `facturas.orden_compra_id` | `RN-32`, `RN-19`, `RN-36` | Preserva documentos |
 
-Validaciones que **no** son `CHECK`/`FK` y viven en aplicación (documentadas como tal): ventana de dedup de visitas, elegibilidad `RN-33`, máquina de estados `RN-28`, consolidación mismo comprador `RN-29`, reasignación `RN-27`, concatenación de búsquedas con filtros `RN-04`/`RN-05`.
+Validaciones que **no** son `CHECK`/`FK` y viven en aplicación (documentadas como tal): ventana de dedup de visitas, elegibilidad `RN-33`, máquina de estados extendida `RN-28` (+ validación de actor por transición), consolidación mismo comprador `RN-29`, reasignación `RN-27`, movimientos de stock `RN-35` (disponibilidad negativa), facturación `RN-36` (OC ya facturada), totales del día `RN-37` (agregación), concatenación de búsquedas con filtros `RN-04`/`RN-05`.
 
 ## Diagrama ER
 
@@ -430,6 +513,7 @@ erDiagram
     users ||--o{ pedidos : "crea (cliente)"
     users ||--o{ pedidos : "asigna (vendedor)"
     users ||--o{ ordenes_compra : confirma
+    users ||--o{ facturas : factura
     users ||--o{ refresh_tokens : autentica
 
     productos ||--o{ producto_categorias : pertenece
@@ -438,15 +522,19 @@ erDiagram
     etiquetas ||--o{ producto_etiquetas : describe
     unidades_medida ||--o{ productos : define_venta
 
+    productos ||--o| stock : tiene
+    productos ||--o{ movimientos_stock : historial
     productos ||--o{ favoritos : es_guardado
     productos ||--o{ visitas : es_visitado
     productos ||--o{ calificaciones : es_calificado
     productos ||--o{ carrito_items : en_carrito
     productos ||--o{ pedido_items : en_pedido
 
+    pedidos ||--o{ movimientos_stock : origina
     carritos ||--o{ carrito_items : contiene
     pedidos ||--o{ pedido_items : contiene
     ordenes_compra ||--o{ pedidos : consolida
+    ordenes_compra ||--o| facturas : genera
 
     producto_categorias {
         uuid product_id PK_FK
@@ -476,6 +564,34 @@ erDiagram
         uuid orden_compra_id FK
         numeric total
     }
+    stock {
+        uuid product_id PK_FK
+        numeric cantidad_disponible
+        numeric cantidad_reservada
+        timestamptz updated_at
+    }
+    movimientos_stock {
+        uuid id PK
+        uuid product_id FK
+        string tipo
+        numeric cantidad
+        uuid pedido_id FK
+        timestamptz created_at
+    }
+    facturas {
+        uuid id PK
+        uuid orden_compra_id FK_UK
+        string numero_fiscal UK
+        numeric total
+        timestamptz created_at
+        uuid created_by FK
+    }
+    ordenes_compra {
+        uuid id PK
+        string numero UK
+        numeric total
+        uuid created_by FK
+    }
 ```
 
 Relaciones clave en texto:
@@ -488,6 +604,10 @@ Relaciones clave en texto:
 - `unidades_medida 1 — N productos`
 - `users 1 — N pedidos` (como `user_id` cliente) y `users 0..1 — N pedidos` (como `vendedor_id`)
 - `pedidos N — 1 ordenes_compra` (consolidación `RN-29`; `orden_compra_id` nullable)
+- `ordenes_compra 1 — 0..1 facturas` (RN-36; `facturas.orden_compra_id UNIQUE`, `RESTRICT` impide borrar OC facturada)
+- `pedidos N — 1 facturas` indirecto vía `orden_compra` (RN-36)
+- `productos 1 — 1 stock` (RN-35; `stock.product_id PK FK`)
+- `productos 1 — N movimientos_stock` y `pedidos 1 — N movimientos_stock` (RN-35; trazabilidad `tipo` reserva/confirmacion/devolucion)
 - `pedidos 1 — N pedido_items N — 1 productos`
 - `productos 1 — N visitas` (con `user_id` nullable + `visitor_cookie` nullable)
 
@@ -497,7 +617,9 @@ Relaciones clave en texto:
 
 - **Usuarios**: nunca `DELETE` físico. `is_active=false` (`RN-17`). El `id` permanece estable para que la reactivación nativa (`ADR-002`) recupere pedidos, favoritos, calificaciones y visitas sin migración. `ON DELETE CASCADE` en tablas hijas existe solo como salvaguarda; en operación normal no se borra el usuario. Si el usuario opta por eliminar sus pedidos al darse de baja (`RF-18`/`RN-19`), se borran solo `pedidos` en `pendiente`; las `ordenes_compra` nunca se eliminan.
 - **Productos**: `DELETE` físico prohibido si existen referencias históricas (`pedido_items`, `calificaciones` con `RESTRICT`). Eliminar con historial es `UPDATE productos SET deleted_at=now(), estado_publicacion='oculto'` (`RN-32`). Los queries públicos siempre filtran `WHERE deleted_at IS NULL AND estado_publicacion='publicado'`. El admin ve todo. `producto_categorias`/`producto_etiquetas` se conservan para que el histórico se resuelva.
-- **Pedidos**: `DELETE` físico solo si `estado='pendiente'` y por el creador (`RN-28`). El resto de estados son inmutables salvo transición a `aceptado`/`rechazado` por staff.
+- **Pedidos**: `DELETE` físico solo si `estado='pendiente'` y por el creador (`RN-28`). El resto de estados son inmutables salvo transiciones de la máquina extendida por staff (RN-28). `entregado` y `rechazado` son terminales.
+- **Stock** (RN-35): `stock` y `movimientos_stock` nunca se borran físicamente salvo `ON DELETE CASCADE` por borrado de producto (que a su vez está bloqueado por `RESTRICT` si hay historial). La corrección de inventario futura usará nuevo tipo de movimiento, no `DELETE`.
+- **Facturas** (RN-36): nunca `DELETE`; `RESTRICT` sobre `facturas.orden_compra_id` impide borrar la OC facturada. `numero_fiscal` inmutable.
 - **Vendedor de baja** (`RN-27`/`ADR-007`): `ordenes_compra.created_by` queda congelado; `pedidos.vendedor_id` de pedidos `pendiente` es reasignable por admin con auditoría (tabla de auditoría futura o `updated_at` + log de aplicación).
 
 ### Counter caches
@@ -540,12 +662,13 @@ Relaciones clave en texto:
 
 - **Categorías** y **etiquetas** se siembran por migración Alembic (insert idempotente con `ON CONFLICT DO NOTHING`).
 - **Unidades**: al menos `unidades`, `cm`, `m`, `kg`.
-- **Productos**: 2–3 productos modelo (`RF-24`) con `unidad_venta_id` válida, al menos una categoría y `precio>0`; `imagen=NULL`.
+- **Productos**: 2–3 productos modelo (`RF-24`) con `unidad_venta_id` válida, al menos una categoría y `precio>0`; `imagen=NULL`. Cada producto sembrado crea su fila `stock` con `cantidad_disponible` inicial (ej. 100) y `cantidad_reservada=0`.
+- **Stock**: migración idempotente crea `stock` para productos existentes sin fila (backfill `disponible=0` o valor de negocio).
 
 ### Testing y trazabilidad
 
 - Cada `RN-xx` mapeada arriba debe tener al menos un happy path y un bad path (`testing/00-strategy.md TEST-01`, `testing/01-test-cases.md`).
-- Tests de API/integración usan **PostgreSQL real** (no SQLite) para validar `CHECK`, `UNIQUE`, `GIN`, `FK RESTRICT` y ventanas de dedup (`TC-RN08-01/02`, `TC-RN32-01`, `TC-RN28-01`, `TC-RN29-01/02`, `TC-RN33-01/02`, `TC-BOOT-01/02`, `TC-RN34-01`).
+- Tests de API/integración usan **PostgreSQL real** (no SQLite) para validar `CHECK`, `UNIQUE`, `GIN`, `FK RESTRICT` y ventanas de dedup (`TC-RN08-01/02`, `TC-RN32-01`, `TC-RN28-01`, `TC-RN29-01/02`, `TC-RN33-01/02`, `TC-BOOT-01/02`, `TC-RN34-01`, `TC-RN35-*`, `TC-RN36-*`, `TC-RN37-01`).
 
 ### Evolución sin rediseño
 

@@ -24,12 +24,16 @@ Incluye los casos comunes de [cuenta](cuenta.md) (UC-C01..UC-C10).
 
 ## Pedidos
 
+Estados: `pendiente → aceptado (En preparación) → facturado → en_logistica → entregado` + `rechazado` terminal (RN-28). El Vendedor solo transiciona `pendiente → aceptado` y `* → rechazado`; `facturado` y posteriores son de Administrador/Logística.
+
 | ID | Caso de uso | Notas |
 | -- | ----------- | ----- |
-| UC-V06 | Listar pedidos | Vista operativa de todos los pedidos generados. |
+| UC-V06 | Listar pedidos | Vista operativa de todos los pedidos generados, con columna de estado extendido y kanban (Recibido / En preparación / Facturación / Logística / Entregado). |
 | UC-V07 | Filtrar pedidos por usuario | Por comprador creador del pedido. |
 | UC-V08 | Cargar pedido en nombre de un cliente | Alta de pedido con el vendedor como operador y el cliente como creador lógico. |
-| UC-V09 | Confirmar pedido y generar orden de compra | Acción exclusiva de staff (RN-18). El pedido deja de ser editable/eliminable por el comprador. |
+| UC-V09 | Confirmar pedido y generar orden de compra (aceptar) | RN-18, RN-28 (`pendiente → aceptado`, Vendedor/Admin). Reserva stock (RN-35). El pedido deja de ser editable/eliminable por el comprador. |
+| UC-V10 | Rechazar pedido | RN-28 (`pendiente → rechazado` o `aceptado → rechazado` con devolución de stock RN-35 `devolucion`). Con motivo visible para el comprador. |
+| UC-V11 | Ver pedido facturado / en logística / entregado | Solo lectura; `facturado → en_logistica → entregado` lo operan Admin/Logística (UC-AD26/AD27, RN-28). |
 
 ## Darse de baja
 

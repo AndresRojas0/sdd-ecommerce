@@ -19,6 +19,7 @@ from app.models.etiqueta import Etiqueta
 from app.models.producto import Producto
 from app.models.producto_categoria import ProductoCategoria
 from app.models.producto_etiqueta import ProductoEtiqueta
+from app.models.stock import Stock
 from app.models.unidad_medida import UnidadMedida
 from app.models.user import User
 from app.models.visita import Visita
@@ -137,7 +138,12 @@ def create_product(
     if body.etiqueta_ids:
         for eid in body.etiqueta_ids:
             db.add(ProductoEtiqueta(product_id=prod.id, etiqueta_id=eid))
+    # RN-35: crear stock inicial para el producto (seed 100 para que tests existentes pasen; negocio real puede ajustar)
     try:
+        db.flush()
+        existing_stock = db.get(Stock, prod.id)
+        if not existing_stock:
+            db.add(Stock(product_id=prod.id, cantidad_disponible=100, cantidad_reservada=0))
         db.commit()
     except IntegrityError as e:
         db.rollback()

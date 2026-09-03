@@ -21,8 +21,10 @@ from app.api.routes.etiquetas import router as etiquetas_router
 from app.api.routes.favorites import router as favorites_router
 from app.api.routes.health import router as health_router
 from app.api.routes.orders import admin_router as admin_orders_router
+from app.api.routes.orders import dashboard_router as dashboard_router
 from app.api.routes.orders import purchase_router as purchase_orders_router
 from app.api.routes.orders import router as orders_router
+from app.api.routes.orders import stock_router as stock_router
 from app.api.routes.products import router as products_router
 from app.api.routes.ratings import router as ratings_router
 from app.api.routes.unidades import router as unidades_router
@@ -72,3 +74,5 @@ app.include_router(carts_router)
 app.include_router(orders_router)
 app.include_router(admin_orders_router)
 app.include_router(purchase_orders_router)
+app.include_router(stock_router)
+app.include_router(dashboard_router)

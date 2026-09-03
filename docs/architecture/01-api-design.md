@@ -24,7 +24,7 @@ espeficado (`domain/domain-model.md`) y las reglas de negocio
 
 `products`, `categories`, `tags`, `units`, `favorites`, `visits`,
 `ratings`, `carts`, `orders` (pedidos), `purchase-orders` (órdenes de
-compra), `users`, `roles`, `auth`.
+compra), `users`, `roles`, `auth`, `stock` / `stock-movements` (RN-35), `invoices` / `facturas` (RN-36), `dashboard/totals-today` (RN-37, widget no columna kanban).
 
 > Este documento crecerá con los contratos concretos cuando se especifique
 > la fase de diseño de API.

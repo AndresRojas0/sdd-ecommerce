@@ -19,7 +19,7 @@ class Pedido(Base):
     __tablename__ = "pedidos"
     __table_args__ = (
         CheckConstraint(
-            "estado IN ('pendiente', 'aceptado', 'rechazado')",
+            "estado IN ('pendiente', 'aceptado', 'facturado', 'en_logistica', 'entregado', 'rechazado')",
             name="ck_pedidos_estado",
         ),
         CheckConstraint(

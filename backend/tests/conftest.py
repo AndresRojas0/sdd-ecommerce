@@ -92,9 +92,11 @@ def engine():
                     if "gen_random_uuid" in arg or "now()" in arg or "'{}'::jsonb" in arg or "'comprador'" in arg or "'publicado'" in arg or "'pendiente'" in arg or "'directa'" in arg:
                         col.server_default = None
                     elif arg.strip() in ("true", "false", "'true'", "'false'", "0"):
-                        if col.name in ("visitas_count", "guardados_count", "busquedas_count", "calificacion_cantidad"):
+                        if col.name in ("visitas_count", "guardados_count", "busquedas_count", "calificacion_cantidad", "cantidad_disponible", "cantidad_reservada"):
                             col.server_default = None
                         elif col.name in ("is_active", "must_change_password", "revoked"):
+                            col.server_default = None
+                        elif col.name in ("total", "subtotal", "precio", "precio_unitario"):
                             col.server_default = None
 
     _sanitize_for_sqlite()
@@ -146,6 +148,21 @@ def engine():
                 obj.origen = "directa"
             if hasattr(obj, "datos_tecnicos") and getattr(obj, "datos_tecnicos", None) is None:
                 obj.datos_tecnicos = {}
+            # stock defaults
+            if hasattr(obj, "cantidad_disponible") and getattr(obj, "cantidad_disponible", None) is None:
+                from decimal import Decimal
+                obj.cantidad_disponible = Decimal("0")
+            if hasattr(obj, "cantidad_reservada") and getattr(obj, "cantidad_reservada", None) is None:
+                from decimal import Decimal
+                obj.cantidad_reservada = Decimal("0")
+            if hasattr(obj, "cantidad") and getattr(obj, "cantidad", None) is None:
+                pass
+            if hasattr(obj, "tipo") and getattr(obj, "tipo", None) is None:
+                pass
+            # ensure updated_at for Stock
+            if hasattr(obj, "updated_at") and getattr(obj, "updated_at", None) is None:
+                obj.updated_at = now
+            # ensure product_id for Stock PK fallback (handled by caller)
 
     Base.metadata.create_all(bind=eng)
     # Seed minimal required data (unidades, categorias)
