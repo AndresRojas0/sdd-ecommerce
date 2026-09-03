@@ -1,6 +1,6 @@
 # Modelo de datos — Esquema físico PostgreSQL
 
-> Derivado de `domain/domain-model.md` y de las reglas `RN-01`..`RN-37` (`requirements/business-rules.md`), `requirements/functional-requirements.md`, `requirements/authentication.md` y los ADR `001`, `002`, `006`, `007`. Stack: **PostgreSQL 16 · SQLAlchemy 2.0 · Alembic · Python 3.12**. Convenciones: claves primarias `UUIDv4`, tiempos `TIMESTAMPTZ`, `snake_case` en identificadores, `gen_random_uuid()` como default de PK, `now()` para marcas temporales.
+> Derivado de `domain/domain-model.md` y de las reglas `RN-01`..`RN-39` (`requirements/business-rules.md`), `requirements/functional-requirements.md`, `requirements/authentication.md` y los ADR `001`, `002`, `006`, `007`. Stack: **PostgreSQL 16 · SQLAlchemy 2.0 · Alembic · Python 3.12**. Convenciones: claves primarias `UUIDv4`, tiempos `TIMESTAMPTZ`, `snake_case` en identificadores, `gen_random_uuid()` como default de PK, `now()` para marcas temporales.
 
 ## Convenciones generales
 
@@ -49,19 +49,29 @@ Seed/bootstrap: ver § Bootstrap `users` al final.
 
 ## 2. `categorias`
 
-Taxonomía cerrada (`RN-01`). Color del badge.
+Taxonomía cerrada en **árbol 2 niveles** (`RN-01`, `RN-38`). Color del badge. `parent_id` autorreferencial; `nivel` derivado de `parent_id`.
 
 | Columna | Tipo | Restricciones | Descripción |
 |---------|------|---------------|-------------|
 | `id` | `UUID` | `PK DEFAULT gen_random_uuid()` | PK |
-| `nombre` | `VARCHAR(100)` | `UNIQUE NOT NULL` | Nombre de la categoría |
+| `nombre` | `VARCHAR(100)` | `UNIQUE NOT NULL` | Nombre de la categoría/subcategoría |
 | `slug` | `VARCHAR(120)` | `UNIQUE NOT NULL` | Slug SEO (`RN-20`) |
 | `color` | `VARCHAR(7)` | `NOT NULL CHECK (color ~ '^#[0-9A-Fa-f]{6}$')` | Hex del badge, ej. `#003087` |
+| `parent_id` | `UUID` | `NULL FK -> categorias.id ON DELETE RESTRICT` | `NULL`=nivel 1 (raíz); `NOT NULL`=nivel 2 (subcategoría hoja) (`RN-38`) |
+| `nivel` | `SMALLINT` | `NOT NULL CHECK (nivel IN (1,2)) CHECK ((parent_id IS NULL AND nivel=1) OR (parent_id IS NOT NULL AND nivel=2))` | Nivel derivado de `parent_id` (1=raíz, 2=hoja). Puede implementarse como columna generada `GENERATED ALWAYS AS (CASE WHEN parent_id IS NULL THEN 1 ELSE 2 END) STORED`. |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Alta |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Última edición (trigger) |
 
-Índices: `UNIQUE (slug)`, `idx_categorias_slug`, `UNIQUE (nombre)`.
+Índices: `UNIQUE (slug)`, `idx_categorias_slug`, `UNIQUE (nombre)`, `idx_categorias_parent_id (parent_id)` — navegación árbol y validación de hijos.
 
-Seed: `bazar`, `calefacción`, `cerrajería`, `construcción`, `corte`, `desbaste y pulido`, `electricidad`, `fontanería`, `iluminación`, `gas`, `herramientas`, `materias primas`, `pintura`, `plomería`, `refrigeración`, `sanitarios`, `suministros seguridad` (`RN-01`).
+Restricciones adicionales (`RN-01`/`RN-38`):
+
+- `CHECK (parent_id IS NULL AND nivel=1 OR parent_id IS NOT NULL AND nivel=2)`.
+- `parent_id` solo puede apuntar a fila con `nivel=1` (profundidad máx. 2): validado por **trigger `BEFORE INSERT OR UPDATE`** que hace `SELECT nivel FROM categorias WHERE id = NEW.parent_id` y falla si `nivel != 1` o si se intenta crear ciclo (`NEW.id = NEW.parent_id`). Alternativa documentada: `CHECK` con función inmutable + validación de aplicación en servicio de categorías.
+- `ON DELETE RESTRICT` impide borrar una categoría con subcategorías o productos vinculados sin reasignación explícita.
+- Trigger `updated_at = now()` en `UPDATE`.
+
+Seed: `bazar`, `calefacción`, `cerrajería`, `construcción`, `corte`, `desbaste y pulido`, `electricidad`, `fontanería`, `iluminación`, `gas`, `herramientas`, `materias primas`, `pintura`, `plomería`, `refrigeración`, `sanitarios`, `suministros seguridad` (`RN-01`) — todas como **nivel 1** (`parent_id NULL`). Subcategorías de ejemplo (seed opcional): `herramientas → herramientas manuales, eléctricas`; `electricidad → cables, iluminación`.
 
 ## 3. `etiquetas`
 
@@ -95,7 +105,7 @@ Seed obligatorio (`RN-23`): `unidades`, `cm`, `m`, `kg` (al menos).
 
 ## 5. `productos`
 
-Entidad central. Precio obligatorio (`RN-11`), imagen nullable (`RN-13`), unidad de venta (`RN-23`), publicación/oculto (`RN-31`), borrado lógico (`RN-32`), contadores cacheados (`RN-08`/`RN-09`/`RN-30`/`RN-21`). Stock **no** vive en esta tabla; ver `stock` (RN-35, §16).
+Entidad central. Precio obligatorio (`RN-11`), imagen nullable (`RN-13`), unidad de venta (`RN-23`), publicación/oculto (`RN-31`), borrado lógico (`RN-32`), contadores cacheados (`RN-08`/`RN-09`/`RN-30`/`RN-21`). Stock **no** vive en esta tabla; ver `stock` (RN-35, §18). **Debe pertenecer a al menos una categoría hoja (nivel 2)** (`RN-01`/`RN-38`); validación de aplicación en servicio de productos.
 
 | Columna | Tipo | Restricciones | Descripción |
 |---------|------|---------------|-------------|
@@ -133,14 +143,14 @@ Trigger: `updated_at = now()` en `UPDATE`.
 
 ## 6. `producto_categorias` (N:M)
 
-`RN-01`: un producto pertenece a una o más categorías.
+`RN-01`/`RN-38`: un producto pertenece a **una o más categorías hoja** (nivel 2). Asignar solo el padre no es válido.
 
 | Columna | Tipo | Restricciones | Descripción |
 |---------|------|---------------|-------------|
 | `product_id` | `UUID` | `PK, FK -> productos.id ON DELETE CASCADE NOT NULL` | Producto |
 | `categoria_id` | `UUID` | `PK, FK -> categorias.id ON DELETE RESTRICT NOT NULL` | Categoría |
 
-PK compuesta `(product_id, categoria_id)`. Índices: `idx_pc_product_id`, `idx_pc_categoria_id`. Check de aplicación: al crear producto exigir `COUNT(categoria_id) >= 1`.
+PK compuesta `(product_id, categoria_id)`. Índices: `idx_pc_product_id`, `idx_pc_categoria_id`. Check de aplicación: al crear/editar producto exigir `COUNT(categoria_id) >= 1` **donde `categorias.nivel=2`**; falla con `422` si solo se asignan padres. Query de validación: `SELECT COUNT(*) FROM producto_categorias pc JOIN categorias c ON c.id=pc.categoria_id WHERE pc.product_id=$1 AND c.nivel=2` debe ser `>=1`.
 
 ## 7. `producto_etiquetas` (N:M)
 
@@ -153,7 +163,39 @@ PK compuesta `(product_id, categoria_id)`. Índices: `idx_pc_product_id`, `idx_p
 
 PK compuesta `(product_id, etiqueta_id)`. Índices: `idx_pt_product_id`, `idx_pt_etiqueta_id`.
 
-## 8. `favoritos`
+## 8. `colecciones` (RN-39)
+
+Grupo curado transversal a categorías, para descubrimiento/marketing. No es taxonomía ni filtro.
+
+| Columna | Tipo | Restricciones | Descripción |
+|---------|------|---------------|-------------|
+| `id` | `UUID` | `PK DEFAULT gen_random_uuid()` | PK |
+| `nombre` | `VARCHAR(100)` | `UNIQUE NOT NULL` | Nombre de la colección, ej. `Ofertas de invierno` |
+| `slug` | `VARCHAR(120)` | `UNIQUE NOT NULL` | Slug SEO (`RN-20`), ruta `/colecciones/{slug}` |
+| `descripcion` | `TEXT` | `NULL` | Descripción larga (nullable) |
+| `imagen` | `VARCHAR(500)` | `NULL` | URL de imagen de portada (nullable) |
+| `destacada` | `BOOLEAN` | `NOT NULL DEFAULT false` | `true` = visible en home/bloque destacado (`RN-39`) |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Alta |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Última edición (trigger) |
+
+Índices: `UNIQUE (nombre)`, `UNIQUE (slug)`, `idx_colecciones_slug`, `idx_colecciones_destacada (destacada) WHERE destacada = true` — listado de destacadas en home.
+
+Trigger: `updated_at = now()` en `UPDATE`.
+
+## 9. `coleccion_productos` (N:M — RN-39)
+
+Join Admin-curado entre colecciones y productos. Orden opcional para merchandising.
+
+| Columna | Tipo | Restricciones | Descripción |
+|---------|------|---------------|-------------|
+| `coleccion_id` | `UUID` | `PK, FK -> colecciones.id ON DELETE CASCADE NOT NULL` | Colección |
+| `product_id` | `UUID` | `PK, FK -> productos.id ON DELETE CASCADE NOT NULL` | Producto |
+| `added_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Fecha de asignación |
+| `orden` | `INTEGER` | `NULL CHECK (orden >= 0)` | Posición manual dentro de la colección (nullable, 0-based) |
+
+PK compuesta `(coleccion_id, product_id)`. Índices: `idx_cp_coleccion_id (coleccion_id)`, `idx_cp_product_id (product_id)`, `idx_cp_coleccion_orden (coleccion_id, orden)` — ordenamiento dentro de colección. `ON DELETE CASCADE` en ambos lados: al borrar producto o colección se limpia el vínculo sin historial.
+
+## 10. `favoritos`
 
 `RN-09`: incrementa/decrementa `productos.guardados_count`.
 
@@ -166,7 +208,7 @@ PK compuesta `(product_id, etiqueta_id)`. Índices: `idx_pt_product_id`, `idx_pt
 
 Restricciones: `UNIQUE (user_id, product_id)`. Índices: `idx_favoritos_user_id`, `idx_favoritos_product_id`. Comportamiento: `INSERT` → `guardados_count+1`; `DELETE` → `guardados_count-1` con piso `0` (transacción + `CHECK`).
 
-## 9. `visitas`
+## 11. `visitas`
 
 `RN-08` + `ADR-001`: deduplicación por visitante y ventana configurable (`VISIT_DEDUP_WINDOW_HOURS`, default 24h); origen para `RN-30`.
 
@@ -190,7 +232,7 @@ Restricciones: `CHECK (user_id IS NOT NULL OR visitor_cookie IS NOT NULL)` — a
 
 Dedup: lógica de aplicación `SELECT 1 FROM visitas WHERE product_id=$1 AND (user_id=$2 OR visitor_cookie=$3) AND visited_at > now() - interval 'X hours'`. Solo si no existe fila, `INSERT` y `UPDATE productos SET visitas_count = visitas_count+1` (y `busquedas_count+1` si `origen='busqueda'`).
 
-## 10. `calificaciones`
+## 12. `calificaciones`
 
 `RN-21` (promedio fraccional), `RN-33` (elegibilidad), `TC-RN33-*`.
 
@@ -209,7 +251,7 @@ Elegibilidad (`RN-33`): check de aplicación — existe `pedidos` con `estado='a
 
 Mantenimiento de promedio: transacción que recalcula `productos.calificacion_promedio` y `calificacion_cantidad` tras `INSERT/UPDATE/DELETE` (o trigger `AFTER`).
 
-## 11. `carritos`
+## 13. `carritos`
 
 `RN-34`: server-side, un carrito activo por usuario, sobrevive logout/cambio de dispositivo.
 
@@ -224,7 +266,7 @@ Mantenimiento de promedio: transacción que recalcula `productos.calificacion_pr
 
 Visitante anónimo no tiene carrito: el UI dispara prompt de login (`RN-34`).
 
-## 12. `carrito_items`
+## 14. `carrito_items`
 
 Líneas del carrito. Cantidad fraccional para `kg`/`m` (`RN-23`). Precio snapshot al momento de agregar.
 
@@ -241,7 +283,7 @@ Líneas del carrito. Cantidad fraccional para `kg`/`m` (`RN-23`). Precio snapsho
 
 Restricciones: `UNIQUE (carrito_id, product_id)` — un renglón por producto. Índices: `idx_carrito_items_carrito_id`, `idx_carrito_items_product_id`.
 
-## 13. `pedidos`
+## 15. `pedidos`
 
 `RN-26` (atributos mínimos), `RN-28` (máquina extendida), `RN-27`/`ADR-007` (reasignación), `RN-29` (consolidación N:1), `RN-18`/`RN-19`, `RN-35` (stock), `RN-36` (factura vía OC).
 
@@ -267,9 +309,9 @@ Reglas de aplicación (no CHECK simples):
 - Reasignación `vendedor_id` solo si `estado='pendiente'` y por `role='administrador'` con auditoría (`RN-27`, `TC-RN27-01`).
 - Consolidación (`RN-29`): solo `pendiente`, mismo `user_id`, todos pasan a `aceptado` juntos al crear la OC; luego avanzan juntos a `facturado` al facturar la OC (RN-36).
 - Transiciones de estado (`RN-28`): `pendiente → aceptado` (Vendedor/Admin, reserva RN-35), `pendiente → rechazado` (Vendedor/Admin), `aceptado → facturado` (solo Admin, confirmación RN-35 + Factura RN-36), `aceptado → rechazado` (Vendedor/Admin, devolución RN-35), `facturado → en_logistica` (Admin/Logística), `en_logistica → entregado` (Admin/Logística). Validación en servicio con `409/422` si transición ilegal o actor no autorizado.
-- Efectos stock (RN-35) se ejecutan en la misma transacción que el cambio de estado; ver §16 `stock` / `movimientos_stock`.
+- Efectos stock (RN-35) se ejecutan en la misma transacción que el cambio de estado; ver §18 `stock` / `movimientos_stock`.
 
-## 14. `pedido_items`
+## 16. `pedido_items`
 
 Líneas del pedido (`RN-26`). Snapshot de precio.
 
@@ -284,7 +326,7 @@ Líneas del pedido (`RN-26`). Snapshot de precio.
 
 Índices: `idx_pedido_items_pedido_id`, `idx_pedido_items_product_id`. `UNIQUE` no se impone: un mismo producto podría aparecer en líneas distintas si se duplica un pedido rechazado con ediciones; la unicidad se deja a la capa de carrito.
 
-## 15. `ordenes_compra`
+## 17. `ordenes_compra`
 
 Documento comercial (`RN-18`, `RN-29`). N pedidos → 1 OC. `RN-27`: OC congelada con atribución original. Unidad facturable para `facturas` (RN-36): 1 OC → 1 Factura.
 
@@ -303,11 +345,11 @@ Secuencia para `numero`: `SEQUENCE oc_numero_seq` o función `nextval` + formate
 
 Relación: `pedidos.orden_compra_id -> ordenes_compra.id` (N:1). No hay tabla de join adicional. `facturas.orden_compra_id -> ordenes_compra.id` (1:1, RN-36) completa el triángulo `pedidos N — 1 ordenes_compra 1 — 1 facturas`.
 
-## 16. `stock` y `movimientos_stock` (RN-35)
+## 18. `stock` y `movimientos_stock` (RN-35)
 
 Stock físico por producto. Separado de `productos` para no mezclar catálogo con disponibilidad. Un producto sin fila en `stock` se considera sin stock inicial (se crea con ceros al dar de alta el producto o por migración).
 
-### 16.1 `stock`
+### 18.1 `stock`
 
 | Columna | Tipo | Restricciones | Descripción |
 |---------|------|---------------|-------------|
@@ -325,7 +367,7 @@ Invariantes (aplicación + CHECK):
 - `facturado` (confirmación): `reservada -= Σ cantidad`; `disponible` no cambia (ya se descontó al reservar).
 - `aceptado → rechazado` (devolución): `disponible += Σ cantidad`, `reservada -= Σ cantidad`.
 
-### 16.2 `movimientos_stock`
+### 18.2 `movimientos_stock`
 
 Historial auditable de cada cambio de stock. Un movimiento por transición que afecta stock.
 
@@ -346,7 +388,7 @@ Notas:
 - La cantidad se registra por producto; un pedido con N líneas genera N filas (una por `pedido_items.product_id`).
 - No hay `ajuste_manual` en MVP; se incorporará si el negocio requiere correcciones de inventario.
 
-## 17. `facturas` (RN-36, RN-37)
+## 19. `facturas` (RN-36, RN-37)
 
 Documento fiscal emitido desde una orden de compra aceptada. 1:1 con `ordenes_compra`.
 
@@ -369,7 +411,7 @@ Reglas de aplicación:
 - `numero_fiscal` se asigna una vez y no se reedita.
 - Totales del día (RN-37): `SELECT COALESCE(SUM(total),0) FROM facturas WHERE created_at::date = CURRENT_DATE` (o `created_at >= date_trunc('day', now())`). Widget de dashboard, no columna kanban.
 
-## 18. `refresh_tokens`
+## 20. `refresh_tokens`
 
 `ADR-003`: refresh rotativo, familia para detección de reuso, persistencia hasheada.
 
@@ -391,7 +433,7 @@ Cambio de contraseña (`RF-29`): `UPDATE refresh_tokens SET revoked=true WHERE u
 
 > Dos audiencias aisladas (tienda vs admin, `ADR-003`/`ADR-005`) comparten el mismo esquema físico; la separación es por `aud`/`scope` en el JWT y por nombres de cookie/secretos distintos en la capa de aplicación, no por tablas separadas.
 
-## 19. `alembic_version`
+## 21. `alembic_version`
 
 Tabla creada automáticamente por Alembic. No modelar en ORM.
 
@@ -407,6 +449,7 @@ Tabla creada automáticamente por Alembic. No modelar en ORM.
 | `users` | `idx_users_role` | `role` | btree | Filtro por rol |
 | `users` | `idx_users_is_active` | `is_active` | btree | Baja lógica |
 | `categorias` | `idx_categorias_slug` | `slug` | btree unique | SEO (`RN-20`) |
+| `categorias` | `idx_categorias_parent_id` | `parent_id` | btree | Árbol 2 niveles (`RN-38`) |
 | `etiquetas` | `idx_etiquetas_slug` | `slug` | btree unique | SEO |
 | `etiquetas` | `idx_etiquetas_nombre_trgm` | `nombre` | GIN trgm | Autocompletado (`RN-03`) |
 | `productos` | `idx_productos_slug` | `slug` | btree unique | SEO |
@@ -420,6 +463,11 @@ Tabla creada automáticamente por Alembic. No modelar en ORM.
 | `producto_categorias` | `idx_pc_categoria_id` | `categoria_id` | btree | Join inverso |
 | `producto_etiquetas` | `idx_pt_product_id` | `product_id` | btree | Join |
 | `producto_etiquetas` | `idx_pt_etiqueta_id` | `etiqueta_id` | btree | Join inverso |
+| `colecciones` | `idx_colecciones_slug` | `slug` | btree unique | SEO (`RN-20`, `RN-39`) |
+| `colecciones` | `idx_colecciones_destacada` | `destacada` | btree parcial | Home destacadas (`RN-39`) |
+| `coleccion_productos` | `idx_cp_coleccion_id` | `coleccion_id` | btree | Join colección |
+| `coleccion_productos` | `idx_cp_product_id` | `product_id` | btree | Join inverso |
+| `coleccion_productos` | `idx_cp_coleccion_orden` | `coleccion_id, orden` | btree | Orden colección |
 | `favoritos` | `idx_favoritos_user_id` | `user_id` | btree | Listado por usuario |
 | `favoritos` | `idx_favoritos_product_id` | `product_id` | btree | Contador |
 | `visitas` | `idx_visitas_product_visited` | `product_id, visited_at` | btree | Agregación |
@@ -462,7 +510,13 @@ CREATE INDEX idx_visitas_recientes ON visitas (product_id, visited_at DESC)
 | `is_active` sin `deleted_at` | `users` | `RN-17`, `ADR-002` | Baja lógica conserva `id` |
 | `must_change_password` | `users` | `BOOT-03` | Forzado en primer login |
 | `CHECK color ~ '^#[0-9A-Fa-f]{6}$'` | `categorias` | Dominio | Badge |
-| `FK producto_categorias` + app check `>=1` | `productos` | `RN-01` | Al menos una categoría |
+| `FK parent_id -> categorias.id RESTRICT` + `CHECK nivel` + trigger `parent nivel=1` | `categorias` | `RN-01`, `RN-38` | Árbol 2 niveles; `parent_id` solo a nivel 1; máx. profundidad 2 |
+| `idx_categorias_parent_id` | `categorias` | `RN-38` | Navegación árbol |
+| `FK producto_categorias` + app check `>=1 hoja (nivel=2)` | `productos` | `RN-01`, `RN-38` | Al menos una subcategoría hoja |
+| `UNIQUE nombre` + `UNIQUE slug` | `colecciones` | `RN-39`, `RN-20` | Colección slug SEO |
+| `CHECK orden >=0` | `coleccion_productos` | `RN-39` | Orden no negativo |
+| `PK (coleccion_id, product_id)` + `CASCADE` | `coleccion_productos` | `RN-39` | N:M colección-producto |
+| `idx_colecciones_destacada WHERE destacada` | `colecciones` | `RN-39` | Home destacadas |
 | `GIN trgm` en `etiquetas.nombre` | `etiquetas` | `RN-03` | Autocompletado `ILIKE '%...%'` |
 | `FK unidad_venta_id RESTRICT` | `productos` | `RN-23` | Unidad del registro abierto |
 | `CHECK precio > 0` | `productos`, `carrito_items`, `pedido_items` | `RN-11` | Precio obligatorio |
@@ -500,7 +554,7 @@ CREATE INDEX idx_visitas_recientes ON visitas (product_id, visited_at DESC)
 | `ON DELETE CASCADE` en joins | `producto_*`, `favoritos`, `calificaciones`, `stock`, `movimientos_stock` | Integridad | Limpieza huérfanos |
 | `ON DELETE RESTRICT` en históricos | `pedido_items.product_id`, `pedidos.user_id`, `facturas.orden_compra_id` | `RN-32`, `RN-19`, `RN-36` | Preserva documentos |
 
-Validaciones que **no** son `CHECK`/`FK` y viven en aplicación (documentadas como tal): ventana de dedup de visitas, elegibilidad `RN-33`, máquina de estados extendida `RN-28` (+ validación de actor por transición), consolidación mismo comprador `RN-29`, reasignación `RN-27`, movimientos de stock `RN-35` (disponibilidad negativa), facturación `RN-36` (OC ya facturada), totales del día `RN-37` (agregación), concatenación de búsquedas con filtros `RN-04`/`RN-05`.
+Validaciones que **no** son `CHECK`/`FK` y viven en aplicación (documentadas como tal): ventana de dedup de visitas, elegibilidad `RN-33`, máquina de estados extendida `RN-28` (+ validación de actor por transición), consolidación mismo comprador `RN-29`, reasignación `RN-27`, movimientos de stock `RN-35` (disponibilidad negativa), facturación `RN-36` (OC ya facturada), totales del día `RN-37` (agregación), concatenación de búsquedas con filtros `RN-04`/`RN-05`, **árbol categorías** `RN-38` (al menos una hoja `nivel=2`, `parent_id` apunta a nivel 1, profundidad máx. 2 — trigger + servicio), **colecciones** `RN-39` (N:M curado, `destacada` toggle, `orden` opcional).
 
 ## Diagrama ER
 
@@ -518,9 +572,12 @@ erDiagram
 
     productos ||--o{ producto_categorias : pertenece
     categorias ||--o{ producto_categorias : agrupa
+    categorias ||--o{ categorias : "parent_id (árbol 2N, RN-38)"
     productos ||--o{ producto_etiquetas : etiqueta
     etiquetas ||--o{ producto_etiquetas : describe
     unidades_medida ||--o{ productos : define_venta
+    productos ||--o{ coleccion_productos : en_coleccion
+    colecciones ||--o{ coleccion_productos : agrupa
 
     productos ||--o| stock : tiene
     productos ||--o{ movimientos_stock : historial
@@ -536,6 +593,13 @@ erDiagram
     ordenes_compra ||--o{ pedidos : consolida
     ordenes_compra ||--o| facturas : genera
 
+    categorias {
+        uuid id PK
+        string nombre UK
+        string slug UK
+        uuid parent_id FK_NULL
+        int nivel
+    }
     producto_categorias {
         uuid product_id PK_FK
         uuid categoria_id PK_FK
@@ -543,6 +607,17 @@ erDiagram
     producto_etiquetas {
         uuid product_id PK_FK
         uuid etiqueta_id PK_FK
+    }
+    colecciones {
+        uuid id PK
+        string nombre UK
+        string slug UK
+        boolean destacada
+    }
+    coleccion_productos {
+        uuid coleccion_id PK_FK
+        uuid product_id PK_FK
+        int orden
     }
     productos {
         uuid id PK
@@ -599,8 +674,10 @@ Relaciones clave en texto:
 - `users 1 — 0..N favoritos N — 1 productos`
 - `users 1 — 0..N calificaciones N — 1 productos` (con `UNIQUE(user,producto)`)
 - `users 1 — 0..1 carritos 1 — N carrito_items N — 1 productos`
-- `productos N — M categorias` vía `producto_categorias`
+- `categorias 1 — N categorias` autorreferencia `parent_id` (árbol 2 niveles, `RN-38`; `nivel=1` raíz, `nivel=2` hoja, `RESTRICT` impide borrar padre con hijos)
+- `productos N — M categorias` vía `producto_categorias` (al menos una hoja `nivel=2`, `RN-38`)
 - `productos N — M etiquetas` vía `producto_etiquetas`
+- `productos N — M colecciones` vía `coleccion_productos` (`RN-39`; curado Admin, `destacada`, `orden` opcional, `CASCADE` ambos lados)
 - `unidades_medida 1 — N productos`
 - `users 1 — N pedidos` (como `user_id` cliente) y `users 0..1 — N pedidos` (como `vendedor_id`)
 - `pedidos N — 1 ordenes_compra` (consolidación `RN-29`; `orden_compra_id` nullable)
@@ -660,20 +737,22 @@ Relaciones clave en texto:
 
 ### Seeds iniciales
 
-- **Categorías** y **etiquetas** se siembran por migración Alembic (insert idempotente con `ON CONFLICT DO NOTHING`).
+- **Categorías** y **etiquetas** se siembran por migración Alembic (insert idempotente con `ON CONFLICT DO NOTHING`). Categorías semilla como **nivel 1** (`parent_id NULL`); subcategorías opcionales como nivel 2 con `parent_id` a su padre (`RN-38`).
 - **Unidades**: al menos `unidades`, `cm`, `m`, `kg`.
-- **Productos**: 2–3 productos modelo (`RF-24`) con `unidad_venta_id` válida, al menos una categoría y `precio>0`; `imagen=NULL`. Cada producto sembrado crea su fila `stock` con `cantidad_disponible` inicial (ej. 100) y `cantidad_reservada=0`.
+- **Productos**: 2–3 productos modelo (`RF-24`) con `unidad_venta_id` válida, **al menos una categoría hoja (nivel 2)** y `precio>0`; `imagen=NULL`. Cada producto sembrado crea su fila `stock` con `cantidad_disponible` inicial (ej. 100) y `cantidad_reservada=0`.
+- **Colecciones** (seed opcional, `RN-39`): 1–2 colecciones de ejemplo (`Novedades`, `Ofertas de invierno`) con `destacada=false`; vínculos en `coleccion_productos` con `orden` secuencial.
 - **Stock**: migración idempotente crea `stock` para productos existentes sin fila (backfill `disponible=0` o valor de negocio).
 
 ### Testing y trazabilidad
 
 - Cada `RN-xx` mapeada arriba debe tener al menos un happy path y un bad path (`testing/00-strategy.md TEST-01`, `testing/01-test-cases.md`).
-- Tests de API/integración usan **PostgreSQL real** (no SQLite) para validar `CHECK`, `UNIQUE`, `GIN`, `FK RESTRICT` y ventanas de dedup (`TC-RN08-01/02`, `TC-RN32-01`, `TC-RN28-01`, `TC-RN29-01/02`, `TC-RN33-01/02`, `TC-BOOT-01/02`, `TC-RN34-01`, `TC-RN35-*`, `TC-RN36-*`, `TC-RN37-01`).
+- Tests de API/integración usan **PostgreSQL real** (no SQLite) para validar `CHECK`, `UNIQUE`, `GIN`, `FK RESTRICT` y ventanas de dedup (`TC-RN08-01/02`, `TC-RN32-01`, `TC-RN28-01`, `TC-RN29-01/02`, `TC-RN33-01/02`, `TC-BOOT-01/02`, `TC-RN34-01`, `TC-RN35-*`, `TC-RN36-*`, `TC-RN37-01`, `TC-RN38-*` árbol 2N, `TC-RN39-*` colecciones N:M y `destacada`).
 
 ### Evolución sin rediseño
 
 - Nuevas unidades: `INSERT INTO unidades_medida`.
-- Nuevas categorías: `INSERT` controlado por admin (taxonomía cerrada, no por usuario final).
+- Nuevas categorías: `INSERT` controlado por admin (taxonomía cerrada, no por usuario final); subcategorías con `parent_id` a nivel 1 (`RN-38`). Profundidad 3+ requiere migración.
 - Nuevas etiquetas: `INSERT` libre por vendedor/admin.
+- Nuevas colecciones: `INSERT INTO colecciones` + `coleccion_productos` con `orden` (RN-39); toggle `destacada` para home sin rediseño.
 - Descuento futuro: añadir `productos.precio_descuento` o tabla `descuentos` sin tocar PKs existentes.
 - Auditoría de reasignación (`RN-27`): añadir tabla `pedido_reasignaciones (id, pedido_id, from_vendedor_id, to_vendedor_id, by_admin_id, at)` cuando se requiera trazabilidad completa.

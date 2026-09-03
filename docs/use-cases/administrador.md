@@ -21,12 +21,35 @@ El primer administrador surge del bootstrap por variables de entorno
 
 | ID | Caso de uso | Notas |
 | -- | ----------- | ----- |
-| UC-AD06 | Listar / buscar / filtrar productos | Por categoría, tag, texto, etc. |
-| UC-AD07 | Ver producto | Detalle completo. |
-| UC-AD08 | Editar producto | CRUD completo (RN-24). |
-| UC-AD09 | Eliminar producto | **Borrado lógico** con historial preservado (RN-32): sale de catálogo y altas nuevas; sus referencias históricas se resuelven intactas. |
+| UC-AD06 | Listar / buscar / filtrar productos | Por categoría (árbol 2N, `RN-01`/`RN-38`), subcategoría, tag, texto, colección, etc. Filtro por categoría raíz incluye sus subcategorías hijas; filtro por hoja es exacto. |
+| UC-AD07 | Ver producto | Detalle completo (incluye categorías hoja asignadas y colecciones). |
+| UC-AD08 | Crear / editar producto | CRUD completo (RN-24). **Debe asignar al menos una subcategoría hoja (nivel 2)**; no es válido solo el padre (`RN-38` — validación `422`). Soporta selección jerárquica padre→hijas en el form. |
+| UC-AD09 | Eliminar producto | **Borrado lógico** con historial preservado (RN-32): sale de catálogo y altas nuevas; sus referencias históricas se resuelven intactas. Limpia vínculos en `coleccion_productos` por `CASCADE`. |
 | UC-AD10 | Ocultar / despublicar producto | **Incorporado** (RN-31): reversible; oculto = fuera de catálogo y búsqueda pública, permanece en DB y visible al staff. |
 | UC-AD11 | Ver estadísticas básicas | Contadores del producto: visitas con origen (RN-08), búsquedas/relevancia (RN-30), guardados (RN-09), promedio/cantidad de calificaciones (RN-21). |
+
+## Categorías — árbol 2 niveles (RN-01, RN-38)
+
+Taxonomía cerrada jerárquica de máx. 2 niveles (`categorias.parent_id`, `nivel`). Solo Admin gestiona el árbol.
+
+| ID | Caso de uso | Notas |
+| -- | ----------- | ----- |
+| UC-AD06 | Gestionar categorías (árbol) | **Extendido para árbol 2N**: listar árbol (raíz + hijas), buscar por nombre/slug, ver detalle con hijas y productos asociados. **Crear categoría nivel 1** (`parent_id=NULL`, `nivel=1`) y **crear subcategoría** (`parent_id` obligatorio apuntando a nivel 1, `nivel=2`). Editar nombre/slug/color y **mover** subcategoría entre padres (solo si destino es nivel 1). Eliminar con `ON DELETE RESTRICT`: falla si tiene hijas o productos vinculados sin reasignación. Validaciones: `CHECK nivel IN (1,2)`, `CHECK parent_id IS NULL ↔ nivel=1`, trigger impide `parent_id → nivel 2` y ciclos. |
+
+> UC-AD06 concentra la gestión del árbol; el listado de productos (UC-AD06) y el ABM de categorías comparten el mismo entry-point en el panel, con pestaña Árbol.
+
+## Colecciones — grupos curados (RN-39)
+
+Grupos transversales a categorías para descubrimiento/marketing. No son taxonomía ni filtro; navegación directa `/colecciones/{slug}` y bloque `destacada` en home.
+
+| ID | Caso de uso | Notas |
+| -- | ----------- | ----- |
+| UC-AD29 | Listar colecciones | Paginado; incluye `destacada`, cantidad de productos y `updated_at`. Filtro por `destacada`. |
+| UC-AD30 | Crear colección | `nombre UNIQUE`, `slug UNIQUE` (`RN-20`), `descripcion` (nullable), `imagen` (nullable), `destacada=false` por defecto. Slug auto-generado y validado único. |
+| UC-AD31 | Editar colección | Edita nombre/slug/descripcion/imagen. Cambio de slug mantiene unicidad; si colección tiene productos, no afecta vínculos. |
+| UC-AD32 | Eliminar colección | `DELETE` físico; `ON DELETE CASCADE` limpia `coleccion_productos` sin afectar productos. Confirmación requerida. |
+| UC-AD33 | Asignar / desasignar productos a colección | N:M `coleccion_productos (coleccion_id, product_id, added_at, orden)`. Agregar quita duplicados (`PK` compuesta). Reordenar vía `orden` (drag & drop). Validación: producto debe existir y estar no eliminado (`deleted_at IS NULL`). |
+| UC-AD34 | Toggle destacada | `PATCH destacada` para home. Listado de destacadas usa índice parcial `WHERE destacada=true`. Sin límite en MVP; sugerido máx. 6 para UI. |
 
 ## Pedidos de producto (ABM completo)
 

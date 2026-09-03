@@ -10,7 +10,8 @@ leer código.
 | **Usuario** | Persona registrada. Definido por `email` (identidad única), `display_name`, `avatar`, `password` (hash), fecha de creación de perfil, fecha/hora de último login y `is_active` (baja lógica). Consulta, busca, filtra, guarda favoritos, genera pedidos y califica productos. |
 | **Rol** | Perfil de autorización: `Visitante anónimo`, `Comprador`, `Vendedor`, `Administrador` (ver `requirements/authentication.md`). |
 | **Producto** | Ítem del catálogo. Atributos: `título`, `slug` (SEO), `descripción`, `componentes incluidos`, `datos técnicos`, `precio`, `imagen` (0..1, nula en MVP), unidad de venta (RN-23). Estado de publicación: publicado/oculto (RN-31); borrado lógico con historial (RN-32). Expone contadores de visitas (con origen, RN-08), búsquedas (RN-30) y guardados (RN-09). |
-| **Categoría** | Familia cerrada de productos (taxonomía controlada). Tiene slug propio y un campo **`color`** (hex) que define el color del badge que la representa en la card del producto y en su detalle. Ej.: `herramientas`, `electricidad`. |
+| **Categoría** | Familia cerrada de productos organizada como **árbol de 2 niveles** (taxonomía controlada, `RN-01`, `RN-38`). `parent_id UUID NULL FK → categorias.id` (`ON DELETE RESTRICT`): `NULL` = nivel 1 (categoría raíz), no NULL = nivel 2 (subcategoría hoja). MVP limita profundidad a **máx. 2**; `CHECK (parent_id IS NULL AND nivel=1 OR parent_id IS NOT NULL AND nivel=2)` y `parent_id` solo puede apuntar a nivel 1 (validado por `CHECK`/trigger + aplicación). Tiene `slug` único, `nombre` único y **`color`** (hex) para el badge en card/detalle. Ej.: `herramientas` (nivel 1) → `herramientas manuales` (nivel 2), `electricidad` → `iluminación`. Un **producto debe pertenecer a al menos una categoría hoja** (nivel 2); pertenecer solo a un padre no es válido. |
+| **Colección** | Grupo **curado por Admin**, **transversal a categorías**, para descubrimiento/marketing (no es taxonomía ni filtro). Atributos: `nombre` (único), `slug` (único, `/colecciones/{slug}`), `descripcion` (nullable), `imagen` (nullable), `destacada` (boolean, para home). Relación **N:M** con `Producto` vía `coleccion_productos` (`orden` opcional). Un producto puede estar en 0..N colecciones; una colección en 0..N productos. Ej.: `Ofertas de invierno`, `Novedades`, `Kit obra`. |
 | **Etiqueta (tag)** | Término descriptivo de vocabulario abierto y dinámico. Tiene slug propio. Ej.: `inoxidable`, `hexagonal`, `tornillos`. |
 | **Unidad de medida** | Unidad de venta del producto, de registro abierto: unidades, cm/m (cables), kg (cañería por kilo), etc. Extensible sin rediseño (RN-23). |
 | **Especificación técnica** | Atributo técnico que describe al producto y es buscable. Equivale a los "datos técnicos". |
@@ -68,7 +69,8 @@ Estados extendidos (RN-28): `pendiente → aceptado (En preparación) → factur
 - Un `Usuario` marca cero o más `Favoritos`; cada `Favorito` referencia un `Producto` e incrementa/decrementa su contador de guardados.
 - Cada apertura de detalle registra una `Visita` sobre el `Producto`, deduplicada por visitante (ADR-001).
 - Un `Usuario` emite cero o más `Calificaciones`; cada `Calificación` referencia un `Producto`.
-- Un `Producto` pertenece a **una o más** `Categorías` (RN-01, relación N:M).
+- Un `Producto` pertenece a **una o más** `Categorías` **hoja** (nivel 2, `RN-01`/`RN-38`, relación N:M vía `producto_categorias`); validación de aplicación exige `COUNT(hoja) >= 1`. No basta con asignar solo una categoría padre.
+- Un `Producto` puede pertenecer a **cero o más** `Colecciones` (`RN-39`, N:M vía `coleccion_productos`); la colección es curada por Admin y transversal a categorías — no es filtro taxonómico sino navegación directa (`/colecciones/{slug}`) y bloque de descubrimiento (`destacada` en home).
 - Un `Producto` tiene cero o más `Etiquetas` (RN-02), relación también N:M con slug propio en cada término.
 - Un `Producto` tiene datos técnicos (especificaciones), precio obligatorio y hasta una imagen.
 - Un `Producto` tiene **un** `Stock` (relación 1:1, RN-35); `Stock` afectado por las transiciones de `Pedido` (`reserva`/`confirmacion`/`devolucion`) y trazado en `movimientos_stock`.
@@ -87,8 +89,10 @@ Usuario ──arma──> Carrito ──líneas──> LíneaDePedido ──> Pr
    │                                                          │
    └──visitante──> Visita (dedup ADR-001) ───────────────────>│
                                                               │
-                 pertenece-a (1..N)                           │  tiene (0..N)
-   Categoría (slug) <─────────────────────────── Producto ───┴──> Etiqueta (slug)
+                  pertenece-a (1..N hoja)                      │  tiene (0..N)
+    Categoría (árbol 2 niveles, slug) <───────── Producto ───┴──> Etiqueta (slug)
+                  ▲ parent_id → Categoría (nivel 1)            │
+                  │ nivel 2 = hoja                              ├──en──> Colección (slug, destacada)  N:M transversal
                                                   │
                                                   └── título, slug, descripción,
                                                       componentes incluidos, datos técnicos,
