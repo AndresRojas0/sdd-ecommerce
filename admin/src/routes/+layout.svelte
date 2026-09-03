@@ -20,7 +20,8 @@
 		{ href: '/vendedores', label: 'Vendedores', icon: '🏷️' },
 		{ href: '/productos', label: 'Productos', icon: '📦' },
 		{ href: '/pedidos', label: 'Pedidos', icon: '🧾' },
-		{ href: '/ordenes', label: 'Órdenes', icon: '📑' }
+		{ href: '/ordenes', label: 'Órdenes', icon: '📑' },
+		{ href: '/stock', label: 'Stock', icon: '📊' }
 	];
 
 	let currentPath = $derived($page.url.pathname);

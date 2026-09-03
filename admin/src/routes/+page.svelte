@@ -9,17 +9,21 @@
 	let loading = $state(true);
 	let error = $state(null);
 	let stats = $state({ usuarios: null, productos: null, pedidosPendientes: null, ordenes: null, categorias: null });
+	let totalesHoy = $state({ fecha: null, total: null, cantidad_facturas: null, loading: true, error: null });
 
 	async function fetchStats() {
 		loading = true;
 		error = null;
+		totalesHoy.loading = true;
+		totalesHoy.error = null;
 		try {
 			const results = await Promise.allSettled([
 				api.get('/admin/users', { limit: 1, offset: 0 }),
 				api.get('/products', { limit: 1, offset: 0, include_hidden: true }),
 				api.get('/admin/orders', { estado: 'pendiente', limit: 1, offset: 0 }),
 				api.get('/admin/purchase-orders', { limit: 1, offset: 0 }),
-				api.get('/categorias')
+				api.get('/categorias'),
+				api.get('/admin/dashboard/totales-hoy')
 			]);
 			stats.usuarios = results[0].status === 'fulfilled' ? results[0].value.total : '—';
 			stats.productos = results[1].status === 'fulfilled' ? results[1].value.total : '—';
@@ -31,10 +35,23 @@
 				const e = results[0].reason;
 				if (e.status === 403) stats.usuarios = 'solo admin';
 			}
+			if (results[5].status === 'fulfilled') {
+				totalesHoy.fecha = results[5].value.fecha;
+				totalesHoy.total = results[5].value.total;
+				totalesHoy.cantidad_facturas = results[5].value.cantidad_facturas;
+				totalesHoy.error = null;
+			} else {
+				const e = results[5].reason;
+				if (e?.status === 401) totalesHoy.error = 'No autenticado (401)';
+				else if (e?.status === 403) totalesHoy.error = 'Acceso denegado (403)';
+				else totalesHoy.error = e?.message || 'Error totales';
+				totalesHoy.total = null;
+			}
 		} catch (e) {
 			error = e.message;
 		} finally {
 			loading = false;
+			totalesHoy.loading = false;
 		}
 	}
 
@@ -57,6 +74,22 @@
 	{#if error}
 		<Alert variant="destructive"><p class="text-sm">{error}</p></Alert>
 	{/if}
+
+	<!-- Totales del día — RN-37 UC-AD28 -->
+	<Card class="p-4 flex flex-col gap-1 border-l-4 border-l-[#16a34a] bg-gradient-to-r from-[#16a34a]/[0.06] to-transparent">
+		{#if totalesHoy.loading}
+			<Skeleton class="h-16 w-full" />
+		{:else if totalesHoy.error}
+			<span class="text-xs font-oswald font-bold tracking-wide text-muted-foreground">FACTURACIÓN HOY</span>
+			<span class="text-xs text-destructive">{totalesHoy.error}</span>
+			<button onclick={fetchStats} class="text-xs underline w-fit">Reintentar</button>
+		{:else}
+			<span class="text-xs font-oswald font-bold tracking-wide text-muted-foreground">FACTURACIÓN HOY — {totalesHoy.fecha || '—'}</span>
+			<span class="font-oswald font-bold text-3xl">${totalesHoy.total != null ? Number(totalesHoy.total).toFixed(2) : '0.00'}</span>
+			<span class="text-xs text-muted-foreground">{totalesHoy.cantidad_facturas ?? 0} factura(s) · RN-37 · solo facturas del día cuentan</span>
+			<a href="/pedidos" class="text-xs underline mt-1">Ver kanban →</a>
+		{/if}
+	</Card>
 
 	{#if loading}
 		<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
