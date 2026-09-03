@@ -19,6 +19,8 @@
 		{ href: '/usuarios', label: 'Usuarios', icon: '👥' },
 		{ href: '/vendedores', label: 'Vendedores', icon: '🏷️' },
 		{ href: '/productos', label: 'Productos', icon: '📦' },
+		{ href: '/categorias', label: 'Categorías', icon: '🗂️' },
+		{ href: '/colecciones', label: 'Colecciones', icon: '✨' },
 		{ href: '/pedidos', label: 'Pedidos', icon: '🧾' },
 		{ href: '/ordenes', label: 'Órdenes', icon: '📑' },
 		{ href: '/stock', label: 'Stock', icon: '📊' }

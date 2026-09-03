@@ -14,6 +14,7 @@
 	let saving = $state(false);
 	let error = $state(null);
 	let success = $state(null);
+	let categoriaError = $state(null);
 
 	let titulo = $state('');
 	let slug = $state('');
@@ -27,15 +28,70 @@
 	let etiqueta_ids_str = $state('');
 
 	let unidades = $state([]);
-	let categorias = $state([]);
+	let categoriasTree = $state([]);
+	let categoriasFlat = $state([]);
 	let etiquetas = $state([]);
+
+	function buildTreeClient(cats) {
+		const byId = {};
+		for (const c of cats) byId[c.id] = { ...c, children: [] };
+		const roots = [];
+		for (const c of cats) {
+			const node = byId[c.id];
+			if (c.parent_id) {
+				const parent = byId[c.parent_id];
+				if (parent) parent.children.push(node);
+				else roots.push(node);
+			} else {
+				roots.push(node);
+			}
+		}
+		roots.sort((a, b) => a.nombre.localeCompare(b.nombre));
+		for (const r of roots) r.children.sort((a, b) => a.nombre.localeCompare(b.nombre));
+		return roots;
+	}
+
+	function validateCategoriaSelection() {
+		if (!categoria_ids.length) return 'Debe seleccionar al menos una categoría (RN-01)';
+		const byId = {};
+		for (const c of categoriasFlat) byId[c.id] = c;
+		const hasLeaf = categoria_ids.some((i) => byId[i]?.nivel === 2);
+		if (hasLeaf) return null;
+		for (const selId of categoria_ids) {
+			const hasChildren = categoriasFlat.some((c) => c.parent_id === selId);
+			if (hasChildren) return 'Debe asignar al menos una subcategoría hoja (nivel 2) — RN-38';
+		}
+		return null;
+	}
+
+	function toggleCategoria(catId, checked) {
+		if (checked) categoria_ids = [...categoria_ids, catId];
+		else categoria_ids = categoria_ids.filter((x) => x !== catId);
+		categoriaError = validateCategoriaSelection();
+	}
 
 	async function fetchAll() {
 		loading = true;
 		try {
 			unidades = await api.get('/unidades-medida');
-			categorias = await api.get('/categorias');
 			etiquetas = await api.get('/etiquetas');
+			let cats;
+			try {
+				cats = await api.get('/categorias', { tree: true });
+			} catch {
+				cats = await api.get('/categorias');
+			}
+			if (Array.isArray(cats) && cats.length && cats[0].children !== undefined) {
+				categoriasTree = cats;
+				categoriasFlat = [];
+				for (const r of cats) {
+					categoriasFlat.push({ ...r, children: undefined });
+					for (const ch of r.children || []) categoriasFlat.push(ch);
+				}
+			} else if (Array.isArray(cats)) {
+				categoriasFlat = cats;
+				categoriasTree = buildTreeClient(cats);
+			}
 			const p = await api.get(`/products/${id}`);
 			titulo = p.titulo;
 			slug = p.slug;
@@ -63,6 +119,12 @@
 		saving = true;
 		error = null;
 		success = null;
+		categoriaError = validateCategoriaSelection();
+		if (categoriaError) {
+			error = categoriaError;
+			saving = false;
+			return;
+		}
 		let parsedDatos = {};
 		try {
 			parsedDatos = datosTecnicos ? JSON.parse(datosTecnicos) : {};
@@ -161,18 +223,54 @@
 				</div>
 
 				<div class="flex flex-col gap-1 text-sm">
-					<span class="font-oswald font-bold">Categorías *</span>
-					<div class="flex flex-wrap gap-2 border p-2 bg-muted/20">
-						{#each categorias as c}
-							<label class="flex items-center gap-1 text-xs border px-2 py-1 bg-background cursor-pointer">
-								<input type="checkbox" value={c.id} onchange={(e) => {
-									if (e.target.checked) categoria_ids = [...categoria_ids, c.id];
-									else categoria_ids = categoria_ids.filter(id => id !== c.id);
-								}} checked={categoria_ids.includes(c.id)} />
-								{c.nombre}
-							</label>
-						{/each}
-					</div>
+					<span class="font-oswald font-bold">Categorías * — árbol 2 niveles (RN-38)</span>
+					{#if categoriasTree.length}
+						<div class="flex flex-col gap-2 border p-2 bg-muted/20">
+							{#each categoriasTree as root (root.id)}
+								<div class="border bg-background p-2">
+									<label class="flex items-center gap-2 text-xs font-medium cursor-pointer">
+										<input type="checkbox" checked={categoria_ids.includes(root.id)} onchange={(e) => toggleCategoria(root.id, e.target.checked)} />
+										<span class="w-3 h-3 border inline-block" style="background:{root.color}"></span>
+										{root.nombre}
+										<span class="font-mono text-[10px] text-muted-foreground">({root.slug})</span>
+										<span class="text-[10px] px-1 border bg-muted">nivel {root.nivel}</span>
+									</label>
+									{#if root.children?.length}
+										<div class="pl-6 mt-2 flex flex-wrap gap-2 border-t pt-2">
+											{#each root.children as child (child.id)}
+												<label class="flex items-center gap-1 text-xs border px-2 py-1 bg-muted/30 cursor-pointer">
+													<input type="checkbox" checked={categoria_ids.includes(child.id)} onchange={(e) => toggleCategoria(child.id, e.target.checked)} />
+													<span class="w-3 h-3 border inline-block" style="background:{child.color}"></span>
+													<span>{root.nombre} › {child.nombre}</span>
+												</label>
+											{/each}
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					{:else if categoriasFlat.length}
+						<div class="flex flex-wrap gap-2 border p-2 bg-muted/20">
+							{#each categoriasFlat as c}
+								<label class="flex items-center gap-1 text-xs border px-2 py-1 bg-background cursor-pointer">
+									<input type="checkbox" checked={categoria_ids.includes(c.id)} onchange={(e) => toggleCategoria(c.id, e.target.checked)} />
+									<span class="w-3 h-3 border inline-block" style="background:{c.color}"></span>
+									{#if c.parent_id}
+										{categoriasFlat.find((p) => p.id === c.parent_id)?.nombre} › {c.nombre}
+									{:else}
+										{c.nombre}
+									{/if}
+								</label>
+							{/each}
+						</div>
+					{:else}
+						<div class="border p-3 text-xs text-muted-foreground">Sin categorías</div>
+					{/if}
+					{#if categoriaError}
+						<span class="text-xs text-destructive">{categoriaError}</span>
+					{:else}
+						<span class="text-xs text-muted-foreground">Al menos una hoja nivel 2 requerida si su padre tiene hijas. Gestionar en <a href="/categorias" class="underline">Categorías</a>.</span>
+					{/if}
 				</div>
 
 				<label class="flex flex-col gap-1 text-sm">
