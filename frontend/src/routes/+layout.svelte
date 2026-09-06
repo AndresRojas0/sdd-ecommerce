@@ -19,7 +19,10 @@
 	let cartOpen = $state(false);
 	let searchQuery = $state('');
 	let categorias = $state([]);
+	let todasOpen = $state(false);
 	let searchDebounce;
+
+	let categoriasNav = $derived(categorias.filter((c) => c.nivel === 1 || !c.nivel));
 
 	onMount(async () => {
 		await fetchMe();
@@ -170,15 +173,34 @@
 		</div>
 	</div>
 
-	<!-- Nav categorías -->
+	<!-- Nav categorías (solo nivel 1, TODAS despliega todas) -->
 	<nav class="nav-bar bg-[var(--orange)] border-t-2 border-[var(--orange-dark)]" aria-label="Categorías">
 		<div class="max-w-[1280px] mx-auto px-3">
 			<div class="flex items-stretch overflow-x-auto scrollbar-none gap-0" style="scrollbar-width:none">
-				<a href="/productos" class="shrink-0 bg-[var(--blue-dark)] text-[var(--yellow)] px-3 py-2 font-oswald font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 border-r-2 border-[var(--orange-dark)] no-underline hover:brightness-110">
-					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-					Todas
-				</a>
-				{#each categorias as cat}
+				<div class="relative shrink-0">
+					<button
+						onclick={() => (todasOpen = !todasOpen)}
+						onblur={() => setTimeout(() => (todasOpen = false), 150)}
+						class="h-full bg-[var(--blue-dark)] text-[var(--yellow)] px-3 py-2 font-oswald font-bold text-xs uppercase tracking-wide flex items-center gap-1.5 border-r-2 border-[var(--orange-dark)] hover:brightness-110"
+						aria-expanded={todasOpen}
+						aria-haspopup="true"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+						Todas
+						<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="transition-transform" style:transform={todasOpen ? 'rotate(180deg)' : 'none'}><path d="m6 9 6 6 6-6"/></svg>
+					</button>
+					{#if todasOpen}
+						<div class="absolute left-0 top-full mt-1 bg-white border-2 border-[var(--blue)] shadow-lg z-50 min-w-[220px] max-h-[60vh] overflow-y-auto">
+							<a href="/productos" class="block px-3 py-2 font-oswald font-bold text-xs uppercase tracking-wide bg-[var(--blue)] text-[var(--yellow)] border-b border-[var(--blue-dark)] no-underline hover:brightness-110" onclick={() => (todasOpen = false)}>Ver todas</a>
+							{#each categoriasNav as cat}
+								<a href="/productos?categoria={cat.slug}" class="block px-3 py-2 text-sm font-roboto text-[#1a1f3a] border-b border-gray-100 last:border-0 hover:bg-[var(--yellow)] hover:text-[var(--blue-dark)] no-underline" onclick={() => (todasOpen = false)}>
+									{cat.nombre}
+								</a>
+							{/each}
+						</div>
+					{/if}
+				</div>
+				{#each categoriasNav as cat}
 					<a href="/productos?categoria={cat.slug}" class="shrink-0 flex items-center px-3 py-2 text-white font-oswald font-semibold text-xs uppercase tracking-wide whitespace-nowrap border-r border-white/20 hover:bg-[#c44b00] no-underline">
 						{cat.nombre}
 					</a>
