@@ -13,7 +13,7 @@ registro de cambios.
 | `02-open-questions.md` | Preguntas sin resolver y decisiones pendientes. |
 | `03-changelog.md` | Historial de cambios por versión. |
 
-> Los cuatro documentos: planeados, aún no creados.
+> Los cuatro documentos: materializados (2026-09-16).
 
 ## Consejos
 

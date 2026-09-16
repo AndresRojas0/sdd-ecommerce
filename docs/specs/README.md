@@ -18,6 +18,9 @@ En esta carpeta se guardan las especificaciones (delta specs) con formato:
 specs/<nombre-del-cambio>.md
 ```
 
+Los changes activos viven en `openspec/changes/` (store SDD); esta carpeta
+guarda la guía, la plantilla y el índice de specs archivadas.
+
 Cada spec contiene requisitos con su fortaleza (MUST / SHALL / SHOULD) y
 escenarios verificables.
 
@@ -28,7 +31,7 @@ escenarios verificables.
 | `README.md` | Este índice y guía del ciclo SDD. |
 | `TEMPLATE.md` | Plantilla para escribir una spec nueva. |
 
-> `TEMPLATE.md`: planeado; `<cambio>.md` se agrega con cada change.
+> `TEMPLATE.md`: creado (2026-09-16); `<cambio>.md` se agrega con cada change.
 | `<cambio>.md` | Spec de un cambio concreto (se agrega con cada change). |
 
 ## Consejos

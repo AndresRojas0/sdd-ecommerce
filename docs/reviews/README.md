@@ -10,6 +10,8 @@ tomadas y seguimiento.
 | ------- | ------------ |
 | `<fecha>-<tema>.md` | Revisión o auditoría con hallazgos y acciones. |
 
+> Primera revisión: `2026-09-16-auditoria-documentacion.md`.
+
 ## Consejos
 
 - Una revisión sin fecha y sin acciones no sirve: registrá ambas.
