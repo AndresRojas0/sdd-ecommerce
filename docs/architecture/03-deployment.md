@@ -65,9 +65,50 @@ Variables de entorno del backend (sin secretos en el repo):
 | -------- | --------- |
 | Desarrollo local | Podman compose local con hot reload. |
 | Bootcamp/demo | Mismo compose, bootstrap de admin activo. |
-| Producción | Por definir (fuera de alcance inmediato). |
+| Producción (MVP) | 1 VPS con podman rootless + podman-compose (ver § Producción MVP). |
 
-## Pendientes
+## CI/CD
 
-- CI/CD: pipeline de build y test de imágenes (herramienta por definir).
-- Estrategia de migraciones de esquema (Alembic es candidato natural en FastAPI).
+Herramienta: **GitHub Actions** (el repo vive en GitHub).
+
+- **`ci.yml`** — corre en PR y push a `main`:
+  - Job backend (Python): instalar dependencias, `PYTHONPATH=backend pytest -q`.
+  - Job frontend (SvelteKit): `npm ci && npm run build`.
+  - Job admin (ídem).
+- **`deploy.yml`** — tras CI verde en `main` (y disparo manual):
+  1. Build de imágenes con podman, push a `ghcr.io`.
+  2. SSH al VPS → `podman pull`.
+  3. `alembic upgrade head` (job de migración ANTES de levantar).
+  4. `podman-compose up -d`.
+
+## Migraciones
+
+**Alembic confirmado** (la tabla `alembic_version` ya figura en el DDL
+de `data-model.md` §21).
+
+- Flujo: modelos SQLAlchemy → `alembic revision --autogenerate` →
+  revisión manual del script → `upgrade head`.
+- Baseline: revisión inicial = estado actual del esquema; stampear DBs
+  existentes con `alembic stamp head`.
+- Reglas: forward-only en producción (sin downgrade automático); toda
+  change SDD que toque esquema incluye su revisión; nunca editar una
+  revisión ya aplicada.
+- En CI: job efímero con Postgres que corre `alembic upgrade head`
+  como validación.
+
+## Producción (MVP)
+
+- **1 VPS** con podman rootless + podman-compose.
+- **Caddy** como reverse proxy con TLS automático (dominio por definir
+  — decisión del mantenedor).
+- Contenedores: `caddy`, `api`, `web`, `admin`, `db` (Postgres con
+  volumen nombrado nativo del VPS — el gotcha WSL/NTFS de dev no aplica
+  pero se mantienen volúmenes nombrados).
+- Secretos: env files fuera del repo (`ADMIN_INITIAL_*` incluidos),
+  rotación manual.
+- Backups: `pg_dump` nocturno a volumen + copia off-site con rclone,
+  retención 30 días, prueba de restore mensual documentada en runbook.
+- Observabilidad mínima: logs JSON a stdout (`podman logs`),
+  healthchecks existentes, uptime check externo.
+- Escalado posterior (multi-instancia + Redis para rate limit) queda
+  como siguiente paso, no MVP.

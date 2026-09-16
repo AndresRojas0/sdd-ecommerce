@@ -12,7 +12,8 @@ racional vive en `docs/decisions/` como ADR numerado.
 | [ADR-005](../decisions/ADR-005-admin-spa-consume-api.md) | Admin como aplicación SvelteKit independiente que consume la API REST | Aceptada |
 | [ADR-006](../decisions/ADR-006-bootstrap-admin-por-env.md) | Bootstrap de admin por variables de entorno con cambio forzado | Aceptada |
 | [ADR-007](../decisions/ADR-007-transferencia-pedidos-vendedor-de-baja.md) | Baja de Vendedor: OC congeladas, pedidos pendientes reasignables por Admin | Aceptada |
+| [ADR-008](../decisions/ADR-008-mecanica-descuentos.md) | Descuentos como precio de oferta con vigencia sobre el producto (was–now), snapshot en pedido | Aceptada |
 
 ## Decisiones pendientes de ADR
 
-- Mecánica de descuentos (% vs. precio final, vigencia).
+- Mecánica de descuentos: **resuelta por ADR-008** (precio de oferta con vigencia).

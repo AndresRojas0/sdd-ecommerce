@@ -295,7 +295,7 @@ Restricciones: `UNIQUE (carrito_id, product_id)` — un renglón por producto. �
 | `estado` | `VARCHAR(30)` | `NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente','aceptado','facturado','en_logistica','entregado','rechazado'))` | Estado — máquina extendida (`RN-28`): `pendiente → aceptado → facturado → en_logistica → entregado`, más `rechazado` terminal |
 | `motivo_rechazo` | `TEXT` | `NULL CHECK (motivo_rechazo IS NULL OR estado='rechazado')` | Motivo si rechazado (`RN-28`) |
 | `subtotal` | `NUMERIC(12,2)` | `NOT NULL CHECK (subtotal >= 0)` | Suma de `pedido_items.subtotal` |
-| `total` | `NUMERIC(12,2)` | `NOT NULL CHECK (total >= 0)` | Total (igual a subtotal en MVP; reserva descuentos) |
+| `total` | `NUMERIC(12,2)` | `NOT NULL CHECK (total >= 0)` | Total (suma de subtotales; los descuentos se aplican por producto vía precio de oferta — ADR-008 — y quedan snapshotados por línea, por lo que total sigue igualando al subtotal) |
 | `orden_compra_id` | `UUID` | `FK -> ordenes_compra.id ON DELETE SET NULL NULL` | OC que lo consolida (`RN-29`); NULL si no consolidado |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Fecha creación (`RN-26`) |
 | `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Última transición |
@@ -754,5 +754,57 @@ Relaciones clave en texto:
 - Nuevas categorías: `INSERT` controlado por admin (taxonomía cerrada, no por usuario final); subcategorías con `parent_id` a nivel 1 (`RN-38`). Profundidad 3+ requiere migración.
 - Nuevas etiquetas: `INSERT` libre por vendedor/admin.
 - Nuevas colecciones: `INSERT INTO colecciones` + `coleccion_productos` con `orden` (RN-39); toggle `destacada` para home sin rediseño.
-- Descuento futuro: añadir `productos.precio_descuento` o tabla `descuentos` sin tocar PKs existentes.
-- Auditoría de reasignación (`RN-27`): añadir tabla `pedido_reasignaciones (id, pedido_id, from_vendedor_id, to_vendedor_id, by_admin_id, at)` cuando se requiera trazabilidad completa.
+- Descuento futuro: añadir `productos.precio_descuento` o tabla `descuentos` sin tocar PKs existentes. → implementado en §22 (ADR-008, columna `precio_descuento`).
+- Auditoría de reasignación (`RN-27`): añadir tabla `pedido_reasignaciones (id, pedido_id, from_vendedor_id, to_vendedor_id, by_admin_id, at)` cuando se requiera trazabilidad completa. → sustituida por `auditoria_staff` en §22 (RN-27 cubierto por auditoría, TC-RN27-01).
+
+## 22. Extensiones aprobadas (ADR-008 + auditoría)
+
+Extensiones al esquema aprobadas por ADR-008 (precio de oferta con vigencia)
+y por la auditoría de staff (`02-security.md`), a incorporar como revisión
+Alembic.
+
+### 22.1 `productos` — oferta con vigencia (ADR-008)
+
+```sql
+ALTER TABLE productos
+  ADD COLUMN precio_descuento NUMERIC(10,2)
+    CHECK (precio_descuento IS NULL OR precio_descuento < precio),
+  ADD COLUMN descuento_desde TIMESTAMPTZ,
+  ADD COLUMN descuento_hasta TIMESTAMPTZ;
+```
+
+> Una sola oferta activa por producto, con vigencia de límites abiertos
+> cuando los extremos son NULL (`precio_efectivo` se resuelve siempre
+> server-side; ver ADR-008).
+
+### 22.2 `pedido_items` — snapshot del precio de lista
+
+```sql
+ALTER TABLE pedido_items
+  ADD COLUMN precio_lista NUMERIC(10,2) NOT NULL;
+```
+
+> Snapshot del precio de lista al momento de la línea: `precio_unitario`
+> guarda el precio efectivo vigente al agregar/crear/editar (solo
+> `pendiente`) y `precio_lista` permite mostrar el ahorro.
+
+### 22.3 `auditoria_staff` — log append-only de acciones del staff
+
+```sql
+CREATE TABLE auditoria_staff (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_id     UUID NULL REFERENCES users(id) ON DELETE SET NULL,
+  accion       VARCHAR(100) NOT NULL,
+  entidad      VARCHAR(100) NOT NULL,
+  entidad_id   UUID NULL,
+  datos_antes  JSONB NULL,
+  datos_despues JSONB NULL,
+  request_id   VARCHAR(64) NULL,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+> Sustituye la futura `pedido_reasignaciones`: la reasignación de vendedor
+> (RN-27, TC-RN27-01) queda cubierta por auditoría (quién/cuándo/desde-quién
+> en `datos_antes`/`datos_despues`). Sin `UPDATE` ni `DELETE`; lectura vía
+> `GET /api/admin/auditoria` (A-AUD-01, `02-security.md`).

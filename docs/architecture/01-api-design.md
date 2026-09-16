@@ -64,7 +64,8 @@ RN-33, consolidación RN-29).
   `q` (nombre + datos técnicos), `categoria` (slug hoja),
   `etiquetas` (slugs, coma), `orden` (RN-07):
   `relevancia | precio_asc | precio_desc | mas_vendidos | mejor_calificados | mas_nuevos | mas_guardados`.
-  `orden=con_descuento` queda reservado pendiente el ADR de descuentos (§8.1).
+  `orden=con_descuento` activo (ADR-008): mayor % primero, empate por
+  precio efectivo ascendente (§8.1).
 
 ### Idempotencia y estado
 
@@ -155,6 +156,8 @@ ADR-006): no es un endpoint HTTP.
 | A-PROD-05 | `DELETE /api/admin/productos/{id}` | staff | Baja lógica (`deleted_at`); conserva historial resuelto de pedidos/OC/calificaciones (RN-32) | 404 | UC-AD09, TC-RN32-01 |
 | A-PROD-06 | `PATCH /api/admin/productos/{id}/publicacion` | staff | `publicado` ⇄ `oculto` (RN-31) | 404 | UC-AD10, TC-RN31-01 |
 | A-PROD-07 | `GET /api/admin/productos/{id}/estadisticas` | staff | Contadores cacheados (visitas/guardados/búsquedas/calificaciones) | 404 | UC-AD11 |
+| A-PROD-08 | `PUT /api/admin/productos/{id}/descuento` | staff | Define/quita vigencia: `precio_descuento`, `descuento_desde/hasta` (ADR-008; CHECK < precio) | 422 precio ≥ lista | ADR-008, UC-AD08 |
+| A-PROD-09 | `DELETE /api/admin/productos/{id}/descuento` | staff | Limpia la oferta activa | 404 sin oferta | ADR-008 |
 | A-ETIQ-01 | `GET /api/admin/etiquetas` | staff | Lista completa del vocabulario abierto (RN-02) | — | UC-V02 |
 | A-ETIQ-02 | `POST /api/admin/etiquetas` | staff | Alta de etiqueta; slug único | 422 | UC-V02, RN-02/20 |
 | A-UNID-01 | `GET /api/admin/unidades` | staff | Registro abierto de unidades (RN-23) | — | UC-V01 |
@@ -200,6 +203,7 @@ ADR-006): no es un endpoint HTTP.
 | A-FAC-01 | `GET /api/admin/facturas` | staff | Lista `facturas` | — | RN-36 |
 | A-FAC-02 | `GET /api/admin/facturas/{id}` | staff | Detalle (nunca DELETE) | 404 | RN-36 |
 | A-DASH-01 | `GET /api/admin/dashboard/totales-hoy` | staff | Totales del día (RN-37): widget, no columna kanban | — | UC-AD28 |
+| A-AUD-01 | `GET /api/admin/auditoria` | `administrador` | Lectura de `auditoria_staff` (filtro actor/entidad/fechas); append-only, sin borrado | 422 filtros | 02-security.md |
 
 ### 6.3 Máquina de estados ↔ endpoints
 
@@ -226,20 +230,23 @@ Sin transiciones inversas salvo `aceptado → rechazado`.
 | Cuenta | C01..C10 | S-AUTH-01..05, S-CUENTA-01..04; C04 diferido (§8.2); C07 diferido (§8.4) |
 | Comprador | B01..B10 | S-FAV-01..03, S-CART-01..04, S-PED-01..06, S-CAL-01..02 |
 | Vendedor | V01..V11 | A-PROD-03/04, A-ETIQ-01/02, A-USR-01..06, A-PED-01/03/04/05, A-PED-02 (V11 lectura) — superficie `/api/admin` asumida, a confirmar (§8.6) |
-| Administrador | AD01..AD34 | A-USR-*, A-PROD-*, A-CAT-*, A-COL-*, A-PED-*, A-OC-*, A-STK-*, A-FAC-*, A-DASH-01 |
+| Administrador | AD01..AD34 | A-USR-*, A-PROD-*, A-CAT-*, A-COL-*, A-PED-*, A-OC-*, A-STK-*, A-FAC-*, A-DASH-01, A-AUD-01 |
 
 ### 7.2 Resumen RF/AUTH
 
-- Cubiertos: RF-01..14, 16, 18..21, 23..32 y AUTH-01..05, 07..12.
-- Diferidos: RF-15 (imagen: campo reservado, NULL en MVP), RF-17 (recuperación), RF-09 parcial (orden `con_descuento`), RF-28 parcial (avatar).
+- Cubiertos: RF-01..14, 16, 18..21, 23..32 (RF-09 orden `con_descuento`
+  activo por ADR-008) y AUTH-01..05, 07..12.
+- Diferidos: RF-15 (imagen: campo reservado, NULL en MVP), RF-17
+  (recuperación), RF-28 parcial (avatar).
 - Fuera de alcance: pagos, envíos/operativa logística, moderación (RN-25), seguir usuarios (RN-22).
 
 ## 8. Pendientes y diferidos
 
-1. **Descuentos**: sin endpoints ni campos hasta que exista el ADR de
-   mecánica (% vs precio final, vigencia). `orden=con_descuento`
-   reservado; `productos.precio_descuento` o tabla `descuentos` como
-   opciones futuras.
+1. **Descuentos**: resuelto por ADR-008 — precio de oferta con vigencia
+   (was–now) a nivel producto. Endpoints A-PROD-08/A-PROD-09 sobre
+   `/api/admin`; sort `con_descuento` activo (mayor % primero, empate
+   por precio efectivo ascendente); snapshot `pedido_items.precio_lista`
+   para mostrar el ahorro.
 2. **Recuperación de contraseña**: sin endpoint en MVP (sin email
    configurado, AUTH-06).
 3. **Imágenes de producto**: campo `imagen` reservado y NULL; no hay
@@ -266,6 +273,7 @@ Sin transiciones inversas salvo `aceptado → rechazado`.
    "nulo en MVP". Sin endpoint hasta decidir.
 5. **Orden "con descuento"**: listado como in-scope (RN-07/RF-09) pero
    sin mecánica definida ni campo en el modelo. Criterio reservado.
+   Resuelto por ADR-008 (precio de oferta con vigencia).
 6. **Alias de estados**: "pendiente de validación" (RF-30/UC-B05) y las
    etiquetas kanban (Recibido/En preparación/…) son aliases de
    presentación; la API expone solo el enum almacenado de RN-28.
