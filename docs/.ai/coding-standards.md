@@ -18,8 +18,10 @@ resume, no reemplaza el estilo existente.
 
 - Runes: `$state`, `$derived`, `$props`, `$effect`.
 - Componentes en `src/lib/components`; stores en `src/lib/stores`.
-- Estilos con los tokens CSS del design system
-  (`docs/ui/03-design-system.md`); no hex hardcodeados.
+- Estilos con Tailwind utilities tomando los colores de los tokens CSS del
+  design system vía valores arbitrarios (`bg-[var(--blue)]`,
+  `text-[var(--yellow)]` — ver `docs/ui/03-design-system.md`); no hex
+  hardcodeados.
 
 ## General
 
