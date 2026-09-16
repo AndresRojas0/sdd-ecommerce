@@ -15,7 +15,7 @@ proyecto, guía de prompts, workflow, estándares y definition of done.
 | `definition-of-done.md` | Criterios de terminado para tareas y cambios. |
 | `coding-standards.md` | Estándares de código del proyecto. |
 
-> Los seis documentos: planeados; se materializarán al iniciar la implementación.
+> Los seis documentos: materializados (2026-09-16). La implementación ya arrancó: esta es la puerta de entrada de todo agente.
 
 ## Consejos
 
