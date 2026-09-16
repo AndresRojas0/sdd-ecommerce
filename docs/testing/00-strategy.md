@@ -51,7 +51,5 @@ tags/unidades, gestión de usuarios/vendedores y bootstrap de admin (ADR-006).
 
 ## Pendientes
 
-- Pipeline CI que ejecute la suite: **GitHub Actions** (definido en
-  `architecture/03-deployment.md`).
 - Estrategia de frontend (E2E con Playwright es candidato natural): se
   definirá cuando exista la app SvelteKit.

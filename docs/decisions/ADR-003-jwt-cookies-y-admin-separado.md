@@ -46,4 +46,4 @@ del frontend. El stack tecnológico concreto se definirá más adelante.
 
 - Positivas: credenciales inaccesibles desde JS; revocación real vía refresh rotativo; despliegue y evolución independientes de tienda y admin.
 - Negativas: requiere manejar rotación/detección de reuso correctamente; dos sistemas de sesión que mantener; CSRF exige SameSite correcto y validación adicional en mutaciones sensibles.
-- Pendiente: definir stack concreto (otro día, según decisión del proyecto).
+- ~~Pendiente: definir stack concreto~~ → Resuelto en ADR-004 (FastAPI / PostgreSQL / SvelteKit).

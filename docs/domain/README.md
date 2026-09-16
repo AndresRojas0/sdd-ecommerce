@@ -9,10 +9,9 @@ información que representa cada una.
 | Archivo | Qué contiene |
 | ------- | ------------ |
 | `domain-model.md` | Modelo conceptual del sistema: conceptos y relaciones. |
-| `entities.md` | Descripción detallada de cada entidad y sus atributos. |
-| `data-model.md` | Esquema físico: tablas, columnas, índices y relaciones. |
+| `data-model.md` | Esquema físico: DDL PostgreSQL completo con CHECKs, índices y extensiones (§22). |
 
-> `entities.md` y `data-model.md`: planeados (data-model es el próximo paso del paradigma).
+> `domain-model.md` y `data-model.md`: existentes. `entities.md`: retirado — su contenido quedó absorbido por `data-model.md`.
 
 ## Consejos
 

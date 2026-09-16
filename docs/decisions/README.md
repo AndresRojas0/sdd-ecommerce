@@ -27,3 +27,16 @@ Contenido mínimo:
 - Un ADR se escribe cuando se TOMA la decisión, no después.
 - Los ADR son inmutables: si la decisión cambia, se crea un ADR nuevo.
 
+## Índice de ADRs
+
+| ADR | Decisión |
+| --- | -------- |
+| ADR-001 | Conteo de visitas anónimas (cookie first-party + dedup por ventana). |
+| ADR-002 | Reactivación nativa de usuarios desactivados. |
+| ADR-003 | JWT en cookies + panel admin separado. |
+| ADR-004 | Stack tecnológico (FastAPI / PostgreSQL / SvelteKit). |
+| ADR-005 | Admin SPA consume la API por REST (superficies separadas). |
+| ADR-006 | Bootstrap del admin por variables de entorno. |
+| ADR-007 | Transferencia de pedidos ante vendedor de baja. |
+| ADR-008 | Mecánica de descuentos (precio de oferta con vigencia). |
+

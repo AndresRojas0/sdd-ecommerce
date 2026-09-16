@@ -11,8 +11,8 @@ objetivo concreto.
 | `visitante-anonimo.md` | Visitante anónimo | Especificado (UC-A01..A10) |
 | `cuenta.md` | Comprador y Vendedor (autogestión) | Especificado (UC-C01..C10; UC-C04 diferido por AUTH-06) |
 | `comprador.md` | Comprador | Especificado (UC-B01..B10) |
-| `vendedor.md` | Vendedor | Especificado (UC-V01..V09); superficie por confirmar |
-| `administrador.md` | Administrador | Especificado (UC-AD01..AD24); UI en el proyecto del panel admin |
+| `vendedor.md` | Vendedor | Especificado (UC-V01..V11); superficie por confirmar |
+| `administrador.md` | Administrador | Especificado (UC-AD01..AD34); UI en el proyecto del panel admin |
 
 ## Convenciones
 

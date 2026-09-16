@@ -14,7 +14,7 @@ restricciones y comportamientos esperados.
 | `authentication.md` | Especificación de autenticación y autorización. |
 | `user-stories.md` | Necesidades expresadas desde la perspectiva del usuario. |
 
-> `non-functional-requirements.md` y `user-stories.md`: planeados, aún no creados.
+> Requisitos no funcionales: cubiertos en `architecture/02-security.md` y `architecture/03-deployment.md`. `user-stories.md`: retirado — los casos de uso (`use-cases/`) cumplen ese rol.
 
 ## Consejos
 
