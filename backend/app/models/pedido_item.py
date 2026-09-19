@@ -19,6 +19,7 @@ class PedidoItem(Base):
     __table_args__ = (
         CheckConstraint("cantidad > 0", name="ck_pedido_items_cantidad"),
         CheckConstraint("precio_unitario > 0", name="ck_pedido_items_precio_unitario"),
+        CheckConstraint("precio_lista > 0", name="ck_pedido_items_precio_lista"),
         CheckConstraint("subtotal >= 0", name="ck_pedido_items_subtotal"),
         Index("idx_pedido_items_pedido_id", "pedido_id"),
         Index("idx_pedido_items_product_id", "product_id"),
@@ -41,6 +42,8 @@ class PedidoItem(Base):
     )
     cantidad: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     precio_unitario: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    # ADR-008: precio de lista vigente al momento del snapshot (sin descuento)
+    precio_lista: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
     subtotal: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
 
     pedido: Mapped[Pedido] = relationship("Pedido", back_populates="items")  # type: ignore[name-defined]

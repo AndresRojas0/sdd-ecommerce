@@ -70,8 +70,8 @@ def test_search_combinable_RN04(client, categoria, unidad, vendedor, etiqueta, d
 
 
 def test_sorting_RN07(client, categoria, unidad, vendedor):
-    # Ensure sorting params don't error
-    for sort in ["precio_asc", "precio_desc", "mas_reciente", "a_z", "z_a", "relevance"]:
+    # Ensure sorting params don't error (RN-07: 7 sortings incl. con_descuento — ADR-008)
+    for sort in ["precio_asc", "precio_desc", "mas_reciente", "a_z", "z_a", "relevance", "con_descuento"]:
         resp = client.get("/products", params={"sort": sort})
         assert resp.status_code == 200, sort
 

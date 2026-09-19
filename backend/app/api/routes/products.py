@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_optional_user, require_admin_role
 from app.core.config import get_settings
+from app.core.pricing import descuento_activo, descuento_porcentaje, precio_efectivo
 from app.db.base import get_db
 from app.models.categoria import Categoria
 from app.models.etiqueta import Etiqueta
@@ -25,6 +26,7 @@ from app.models.user import User
 from app.models.visita import Visita
 from app.schemas.product import (
     CategoriaBrief,
+    DiscountSetRequest,
     EtiquetaBrief,
     ProductCreate,
     ProductResponse,
@@ -65,7 +67,7 @@ def _validate_categorias_leaf(db: Session, categoria_ids: list[uuid.UUID]) -> No
     # Si ninguna tiene hijos, permitir nivel 1 (MVP fallback)
 
 
-def _to_response(prod: Producto, db: Session) -> ProductResponse:
+def _to_response(prod: Producto, db: Session, *, include_admin_discount: bool = False) -> ProductResponse:
     # Load related for briefs
     # If relationships already loaded, use them; else query
     cats: list[CategoriaBrief] = []
@@ -116,6 +118,13 @@ def _to_response(prod: Producto, db: Session) -> ProductResponse:
         calificacion_cantidad=prod.calificacion_cantidad,
         created_at=prod.created_at,
         updated_at=prod.updated_at,
+        # ADR-008: pricing derivado (store) + gestión de oferta (admin)
+        precio_efectivo=precio_efectivo(prod),
+        en_descuento=descuento_activo(prod),
+        descuento_porcentaje=descuento_porcentaje(prod),
+        precio_descuento=prod.precio_descuento if include_admin_discount else None,
+        descuento_desde=prod.descuento_desde if include_admin_discount else None,
+        descuento_hasta=prod.descuento_hasta if include_admin_discount else None,
     )
 
 
@@ -176,7 +185,7 @@ def create_product(
         db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Error de integridad") from e
     db.refresh(prod)
-    return _to_response(prod, db)
+    return _to_response(prod, db, include_admin_discount=True)
 
 
 # ---------------------------------------------------------------------------
@@ -269,6 +278,17 @@ def list_products(
         else:
             return {"total": 0, "limit": limit, "offset": offset, "items": []}
 
+    # ADR-008 / RN-04: orden=con_descuento intersecta con q/filtros y exige oferta VIGENTE
+    if sort == "con_descuento":
+        now = datetime.now(timezone.utc)
+        filters.append(
+            and_(
+                Producto.precio_descuento.isnot(None),
+                or_(Producto.descuento_desde.is_(None), Producto.descuento_desde <= now),
+                or_(Producto.descuento_hasta.is_(None), Producto.descuento_hasta >= now),
+            )
+        )
+
     if filters:
         stmt = stmt.where(and_(*filters))
         count_stmt = count_stmt.where(and_(*filters))
@@ -286,19 +306,19 @@ def list_products(
         stmt = stmt.order_by(Producto.titulo.asc())
     elif sort == "z_a":
         stmt = stmt.order_by(Producto.titulo.desc())
-    elif sort in ("relevance", "con_descuento", None):
+    elif sort == "con_descuento":
+        # % DESC, tie-break precio_efectivo (== precio_descuento en ofertas activas) ASC
+        pct = (Producto.precio - Producto.precio_descuento) * Decimal("100") / Producto.precio
+        stmt = stmt.order_by(pct.desc(), Producto.precio_descuento.asc(), Producto.id.asc())
+    elif sort in ("relevance", None):
         # relevance = busquedas_count DESC (RN-30), fallback to created_at
-        if sort == "relevance" or sort is None:
-            stmt = stmt.order_by(Producto.busquedas_count.desc(), Producto.created_at.desc())
-        else:
-            # con_descuento reserved: sort by price desc as placeholder
-            stmt = stmt.order_by(Producto.precio.desc())
+        stmt = stmt.order_by(Producto.busquedas_count.desc(), Producto.created_at.desc())
     else:
         stmt = stmt.order_by(Producto.created_at.desc())
 
     stmt = stmt.limit(limit).offset(offset)
     productos = db.scalars(stmt).all()
-    items = [_to_response(p, db) for p in productos]
+    items = [_to_response(p, db, include_admin_discount=is_staff) for p in productos]
     return {"total": total, "limit": limit, "offset": offset, "items": [i.model_dump() for i in items]}
 
 
@@ -329,7 +349,7 @@ def get_product(
     if not is_staff:
         if prod.deleted_at is not None or prod.estado_publicacion != "publicado":
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto no disponible")
-    return _to_response(prod, db)
+    return _to_response(prod, db, include_admin_discount=bool(is_staff))
 
 
 # ---------------------------------------------------------------------------
@@ -388,7 +408,58 @@ def update_product(
         db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug duplicado") from e
     db.refresh(prod)
-    return _to_response(prod, db)
+    return _to_response(prod, db, include_admin_discount=True)
+
+
+# ---------------------------------------------------------------------------
+# PUT/DELETE /products/{id}/discount — ADR-008
+# ---------------------------------------------------------------------------
+
+
+@router.put("/{product_id}/discount", response_model=ProductResponse)
+def set_discount(
+    product_id: uuid.UUID,
+    body: DiscountSetRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
+):
+    prod = db.get(Producto, product_id)
+    if not prod:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado")
+    if body.precio_descuento <= 0:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="precio_descuento debe ser > 0")
+    if prod.precio is not None and body.precio_descuento >= prod.precio:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="precio_descuento debe ser menor que precio",
+        )
+    if body.descuento_desde is not None and body.descuento_hasta is not None and body.descuento_desde >= body.descuento_hasta:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="descuento_desde debe ser anterior a descuento_hasta",
+        )
+    prod.precio_descuento = body.precio_descuento
+    prod.descuento_desde = body.descuento_desde
+    prod.descuento_hasta = body.descuento_hasta
+    db.commit()
+    db.refresh(prod)
+    return _to_response(prod, db, include_admin_discount=True)
+
+
+@router.delete("/{product_id}/discount", status_code=status.HTTP_204_NO_CONTENT)
+def remove_discount(
+    product_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
+):
+    prod = db.get(Producto, product_id)
+    if not prod or prod.precio_descuento is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto sin oferta activa de descuento")
+    prod.precio_descuento = None
+    prod.descuento_desde = None
+    prod.descuento_hasta = None
+    db.commit()
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -435,7 +506,7 @@ def toggle_visibility(
     prod.estado_publicacion = estado
     db.commit()
     db.refresh(prod)
-    return _to_response(prod, db)
+    return _to_response(prod, db, include_admin_discount=True)
 
 
 # ---------------------------------------------------------------------------

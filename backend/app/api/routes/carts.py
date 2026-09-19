@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_active_user
+from app.core.pricing import precio_efectivo
 from app.db.base import get_db
 from app.models.carrito import Carrito
 from app.models.carrito_item import CarritoItem
@@ -88,8 +89,10 @@ def add_item(
     )
     if existing:
         existing.cantidad = body.cantidad
-        existing.precio_unitario = prod.precio
-        existing.subtotal = body.cantidad * prod.precio
+        # ADR-008: el merge re-snapshotea al precio efectivo vigente
+        price = precio_efectivo(prod)
+        existing.precio_unitario = price
+        existing.subtotal = body.cantidad * price
         db.commit()
         db.refresh(existing)
         return CarritoItemResponse(
@@ -104,12 +107,13 @@ def add_item(
             producto_titulo=prod.titulo,
             producto_slug=prod.slug,
         )
+    price = precio_efectivo(prod)  # ADR-008: snapshot al precio efectivo vigente
     item = CarritoItem(
         carrito_id=cart.id,
         product_id=body.product_id,
         cantidad=body.cantidad,
-        precio_unitario=prod.precio,
-        subtotal=body.cantidad * prod.precio,
+        precio_unitario=price,
+        subtotal=body.cantidad * price,
     )
     db.add(item)
     db.commit()
@@ -142,7 +146,8 @@ def update_item(
     prod = db.get(Producto, item.product_id)
     item.cantidad = body.cantidad
     if prod:
-        item.precio_unitario = prod.precio
+        # ADR-008: actualizar cantidad re-snapshotea al precio efectivo vigente
+        item.precio_unitario = precio_efectivo(prod)
     item.subtotal = item.cantidad * item.precio_unitario
     db.commit()
     db.refresh(item)

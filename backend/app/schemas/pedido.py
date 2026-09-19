@@ -14,6 +14,8 @@ class PedidoItemResponse(BaseModel):
     product_id: uuid.UUID
     cantidad: Decimal
     precio_unitario: Decimal
+    # ADR-008: precio de lista al momento del snapshot
+    precio_lista: Decimal | None = None
     subtotal: Decimal
     producto_titulo: str | None = None
 

@@ -35,6 +35,10 @@ class Producto(Base):
     __table_args__ = (
         CheckConstraint("precio > 0", name="ck_productos_precio"),
         CheckConstraint(
+            "precio_descuento IS NULL OR precio_descuento < precio",
+            name="ck_productos_precio_descuento",
+        ),
+        CheckConstraint(
             "estado_publicacion IN ('publicado', 'oculto')",
             name="ck_productos_estado_publicacion",
         ),
@@ -80,6 +84,14 @@ class Producto(Base):
         JSONB, nullable=True, server_default=text("'{}'::jsonb")
     )
     precio: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    # ADR-008: oferta con vigencia — NULL = sin descuento
+    precio_descuento: Mapped[Decimal | None] = mapped_column(Numeric(10, 2), nullable=True)
+    descuento_desde: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    descuento_hasta: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     imagen: Mapped[str | None] = mapped_column(String(500), nullable=True)
     unidad_venta_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

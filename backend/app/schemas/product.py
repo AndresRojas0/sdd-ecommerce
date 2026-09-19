@@ -56,6 +56,21 @@ class ProductUpdate(BaseModel):
         return v
 
 
+class DiscountSetRequest(BaseModel):
+    """ADR-008: define/actualiza la oferta de un producto."""
+
+    precio_descuento: Decimal
+    descuento_desde: datetime | None = None
+    descuento_hasta: datetime | None = None
+
+    @field_validator("precio_descuento")
+    @classmethod
+    def validate_precio_descuento(cls, v: Decimal) -> Decimal:
+        if v <= 0:
+            raise ValueError("precio_descuento debe ser > 0")
+        return v
+
+
 class CategoriaBrief(BaseModel):
     id: uuid.UUID
     nombre: str
@@ -105,6 +120,14 @@ class ProductResponse(BaseModel):
     calificacion_cantidad: int
     created_at: datetime
     updated_at: datetime
+    # ADR-008 — store-facing pricing
+    precio_efectivo: Decimal
+    en_descuento: bool
+    descuento_porcentaje: Decimal
+    # ADR-008 — admin-only discount management fields (None on store payloads)
+    precio_descuento: Decimal | None = None
+    descuento_desde: datetime | None = None
+    descuento_hasta: datetime | None = None
 
     model_config = {"from_attributes": True}
 

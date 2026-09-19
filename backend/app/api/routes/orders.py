@@ -10,6 +10,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_active_user, require_admin_role
+from app.core.pricing import precio_efectivo
 from app.db.base import get_db
 from app.models.carrito import Carrito
 from app.models.carrito_item import CarritoItem
@@ -50,6 +51,7 @@ def _pedido_to_response(db: Session, pedido: Pedido) -> PedidoResponse:
                 product_id=it.product_id,
                 cantidad=it.cantidad,
                 precio_unitario=it.precio_unitario,
+                precio_lista=it.precio_lista,
                 subtotal=it.subtotal,
                 producto_titulo=prod.titulo if prod else None,
             )
@@ -188,11 +190,17 @@ def create_order(
     if not cart_items:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Carrito vacío")
 
-    subtotal = sum((ci.subtotal for ci in cart_items), Decimal("0"))
+    # ADR-008: se IGNORAN los precios guardados del carrito — snapshot fresco
+    fresh_lines: list[tuple[CarritoItem, Producto, Decimal, Decimal]] = []
+    subtotal = Decimal("0")
     for ci in cart_items:
         prod = db.get(Producto, ci.product_id)
         if not prod or prod.deleted_at is not None or prod.estado_publicacion != "publicado":
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Producto {ci.product_id} no disponible")
+        price = precio_efectivo(prod)
+        line_subtotal = ci.cantidad * price
+        subtotal += line_subtotal
+        fresh_lines.append((ci, prod, price, line_subtotal))
 
     pedido = Pedido(
         user_id=current_user.id,
@@ -203,17 +211,17 @@ def create_order(
     )
     db.add(pedido)
     db.flush()
-    for ci in cart_items:
-        prod = db.get(Producto, ci.product_id)
-        price = prod.precio if prod else ci.precio_unitario
-        pi = PedidoItem(
-            pedido_id=pedido.id,
-            product_id=ci.product_id,
-            cantidad=ci.cantidad,
-            precio_unitario=price,
-            subtotal=ci.cantidad * price,
+    for ci, prod, price, line_subtotal in fresh_lines:
+        db.add(
+            PedidoItem(
+                pedido_id=pedido.id,
+                product_id=ci.product_id,
+                cantidad=ci.cantidad,
+                precio_unitario=price,
+                precio_lista=prod.precio,
+                subtotal=line_subtotal,
+            )
         )
-        db.add(pi)
     for ci in cart_items:
         db.delete(ci)
     db.commit()
@@ -285,10 +293,20 @@ def update_pending_order(
             cantidad = Decimal(str(cant))
             if cantidad <= 0:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="cantidad debe ser >0")
-            price = prod.precio
+            # ADR-008: la edición re-snapshotea todas las líneas a precios vigentes
+            price = precio_efectivo(prod)
             sub = cantidad * price
             new_subtotal += sub
-            db.add(PedidoItem(pedido_id=pedido.id, product_id=pid_uuid, cantidad=cantidad, precio_unitario=price, subtotal=sub))
+            db.add(
+                PedidoItem(
+                    pedido_id=pedido.id,
+                    product_id=pid_uuid,
+                    cantidad=cantidad,
+                    precio_unitario=price,
+                    precio_lista=prod.precio,
+                    subtotal=sub,
+                )
+            )
         pedido.subtotal = new_subtotal
         pedido.total = new_subtotal
     db.commit()
@@ -345,6 +363,7 @@ def duplicate_rejected(
                 product_id=it.product_id,
                 cantidad=it.cantidad,
                 precio_unitario=it.precio_unitario,
+                precio_lista=it.precio_lista,
                 subtotal=it.subtotal,
             )
         )
@@ -402,7 +421,7 @@ def create_order_on_behalf(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Se requiere al menos un item")
 
     subtotal = Decimal("0")
-    validated: list[tuple[uuid.UUID, Decimal, Decimal]] = []
+    validated: list[tuple[uuid.UUID, Decimal, Decimal, Decimal]] = []
     for raw in body.items:
         pid = raw.get("product_id")
         cant = raw.get("cantidad")
@@ -418,8 +437,8 @@ def create_order_on_behalf(
         cantidad = Decimal(str(cant))
         if cantidad <= 0:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="cantidad debe ser >0")
-        price = prod.precio
-        validated.append((pid_uuid, cantidad, price))
+        price = precio_efectivo(prod)
+        validated.append((pid_uuid, cantidad, price, prod.precio))
         subtotal += cantidad * price
 
     pedido = Pedido(
@@ -431,13 +450,14 @@ def create_order_on_behalf(
     )
     db.add(pedido)
     db.flush()
-    for pid_uuid, cantidad, price in validated:
+    for pid_uuid, cantidad, price, precio_lista in validated:
         db.add(
             PedidoItem(
                 pedido_id=pedido.id,
                 product_id=pid_uuid,
                 cantidad=cantidad,
                 precio_unitario=price,
+                precio_lista=precio_lista,
                 subtotal=cantidad * price,
             )
         )
