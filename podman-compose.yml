@@ -54,6 +54,10 @@ services:
       ADMIN_INITIAL_DISPLAY_NAME: ${ADMIN_INITIAL_DISPLAY_NAME:-}
     volumes:
       - ./backend:/app   # hot-reload: cambios de código sin rebuild
+    # Migraciones en cada arranque (idempotente: alembic no-op si ya está
+    # en head). Sin esto, una migración nueva deja a la DB atrás del código
+    # y los 500 resultantes aparecen enmascarados como errores de CORS.
+    command: sh -c "python wait_for_db.py && alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     depends_on:
       db:
         condition: service_healthy
