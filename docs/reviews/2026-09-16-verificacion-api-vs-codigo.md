@@ -35,12 +35,16 @@ TC-AUTH10-01 (token de tienda rechazado en admin y viceversa) no es
 ejecutable tal como está escrito. Esto es una decisión de arquitectura
 pendiente, no drift cosmético.
 
+RESUELTO: superficie `/admin/auth/*` implementada con `aud=admin`, secreto y
+cookies propios; barrido de audiencia en todos los endpoints admin (55 tests
+en verde).
+
 ## Acciones
 
 | Acción | Estado |
 | ------ | ------ |
-| Decidir aislamiento de audiencias (implementar superficies separadas o revisar ADR-003/005). | Abierta (ver `planning/02-open-questions.md` #8). |
-| Al decidir, actualizar `01-api-design.md` con las rutas reales o alinear el código. | Pendiente de la anterior. |
+| Decidir aislamiento de audiencias (implementar superficies separadas o revisar ADR-003/005). | Hecha (aislamiento implementado; suite 55 tests). |
+| Al decidir, actualizar `01-api-design.md` con las rutas reales o alinear el código. | Hecha (aislamiento implementado; suite 55 tests). |
 | Incorporar al diseño o retirar del código los drifts menores (avatar, stock manual, ratings GET/DELETE, clear cart, variantes de reactivación). | Pendiente. |
 
 ## Seguimiento

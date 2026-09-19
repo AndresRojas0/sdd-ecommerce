@@ -424,6 +424,7 @@ Reglas de aplicación:
 | `expires_at` | `TIMESTAMPTZ` | `NOT NULL` | Expiración (30 días desde emisión) |
 | `revoked` | `BOOLEAN` | `NOT NULL DEFAULT false` | Revocado explícitamente (logout / cambio de contraseña) |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Emisión |
+| `aud` | `VARCHAR(10)` | `NOT NULL DEFAULT 'store'` | Audiencia del token (`store`|`admin`); separación por superficie (ADR-003/005) |
 
 Índices: `UNIQUE (token_hash)`, `idx_rt_user_id`, `idx_rt_family_id`, `idx_rt_expires_at`. Expiración limpia por job o `DELETE WHERE expires_at < now()`.
 
@@ -808,3 +809,10 @@ CREATE TABLE auditoria_staff (
 > (RN-27, TC-RN27-01) queda cubierta por auditoría (quién/cuándo/desde-quién
 > en `datos_antes`/`datos_despues`). Sin `UPDATE` ni `DELETE`; lectura vía
 > `GET /api/admin/auditoria` (A-AUD-01, `02-security.md`).
+
+### 22.4 `refresh_tokens` — audiencia del token (ADR-003/005)
+
+```sql
+-- Migración 004: filas previas son de tienda (única superficie preexistente).
+ALTER TABLE refresh_tokens ADD COLUMN aud VARCHAR(10) NOT NULL DEFAULT 'store';
+```

@@ -29,8 +29,12 @@ detectados entre documentos se listan en §9 sin resolver en este doc.
 | --- | --- | --- |
 | Access token | JWT 15 min, `aud=store`, claims `sub`, `role`, `iat`, `exp` | JWT 15 min, `aud=admin`, mismos claims |
 | Refresh token | 30 días, rotativo, hash SHA-256 en `refresh_tokens` con `family_id` | Ídem, pero `aud=admin` |
-| Cookies | `HttpOnly`, `Secure`, `SameSite=Lax`; refresh con `Path=/api/store/auth/refresh` | Nombres de cookie propios; refresh con `Path=/api/admin/auth/refresh` |
+| Cookies | `HttpOnly`, `Secure`, `SameSite=Lax`; refresh con `Path=/api/store/auth/refresh` | Nombres de cookie propios; refresh con `Path=/admin/auth/refresh` |
 | Roles | anónimo, `comprador` | `vendedor`, `administrador` (y `comprador` solo para ser denegado) |
+
+Nota de implementación: las rutas del backend no llevan prefijo `/api`
+(p. ej. `/admin/orders`, `/auth/login`). El mapeo completo diseño→ruta real
+está en `docs/reviews/2026-09-16-verificacion-api-vs-codigo.md`.
 
 - Un token de tienda no es válido en admin y viceversa (TC-AUTH10-01).
 - Logout revoca la familia completa de refresh tokens (RN de
@@ -134,10 +138,11 @@ ADR-006): no es un endpoint HTTP.
 
 | ID | Endpoint | Auth | Descripción | Errores | Refs |
 | --- | --- | --- | --- | --- | --- |
-| A-AUTH-01 | `POST /api/admin/auth/login` | anónimo admin | Login con `aud=admin`, cookies propias; exige cambio si `must_change_password` | 401/423 | AUTH-10/11, TC-AUTH10-01 |
-| A-AUTH-02 | `POST /api/admin/auth/refresh` | cookie admin | Rotación idéntica a S-AUTH-03 con `aud=admin` | 401 | ADR-003/005 |
-| A-AUTH-03 | `POST /api/admin/auth/logout` | sesión admin | Revoca familia admin | — | UC-C03 |
-| A-AUTH-04 | `GET /api/admin/auth/me` | sesión admin | Perfil staff | 401 | — |
+| A-AUTH-01 | `POST /admin/auth/login` | anónimo admin | Login con `aud=admin`, cookies propias; exige cambio si `must_change_password` | 401/423 | AUTH-10/11, TC-AUTH10-01 |
+| A-AUTH-02 | `POST /admin/auth/refresh` | cookie admin | Rotación idéntica a S-AUTH-03 con `aud=admin` | 401 | ADR-003/005 |
+| A-AUTH-03 | `POST /admin/auth/logout` | sesión admin | Revoca familia admin | — | UC-C03 |
+| A-AUTH-04 | `GET /admin/auth/me` | sesión admin | Perfil staff | 401 | — |
+| A-AUTH-05 | `POST /admin/auth/change-password-force` | cookie admin | Cambio forzado (must_change_password); revoca tokens de ambas audiencias | 401/422 | BOOT-03 |
 | A-USR-01 | `GET /api/admin/usuarios` | staff | Lista/búsqueda/filtro (rol, `is_active`, q) | — | UC-AD01/02, UC-V03 |
 | A-USR-02 | `GET /api/admin/usuarios/{id}` | staff | Detalle de perfil | 404 | UC-AD03, UC-V04 |
 | A-USR-03 | `PATCH /api/admin/usuarios/{id}` | staff | Edición acotada de datos de perfil: NO rol, NO contraseña (alcance a confirmar en vendedor.md) | 422 | UC-AD05, UC-V05, RF-32 |
@@ -282,3 +287,4 @@ Sin transiciones inversas salvo `aceptado → rechazado`.
    facturar impide borrado). A-OC-04 valida sobre el derivado.
 8. **Path de refresh admin**: ADR-003 deja el path "equivalente propio"
    sin definir; aquí se fija `Path=/api/admin/auth/refresh` (§Convenciones).
+   Resuelto: implementado como `Path=/admin/auth/refresh` (A-AUTH-02).
