@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.admin_auth import router as admin_auth_router
 from app.api.routes.admin_users import router as admin_users_router
+from app.api.routes.audit import router as audit_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.carts import router as carts_router
 from app.api.routes.categorias import router as categorias_router
@@ -24,6 +25,7 @@ from app.api.routes.favorites import router as favorites_router
 from app.api.routes.health import router as health_router
 from app.api.routes.orders import admin_router as admin_orders_router
 from app.api.routes.orders import dashboard_router as dashboard_router
+from app.api.routes.orders import invoices_router as invoices_router
 from app.api.routes.orders import purchase_router as purchase_orders_router
 from app.api.routes.orders import router as orders_router
 from app.api.routes.orders import stock_router as stock_router
@@ -79,4 +81,6 @@ app.include_router(orders_router)
 app.include_router(admin_orders_router)
 app.include_router(purchase_orders_router)
 app.include_router(stock_router)
+app.include_router(invoices_router)
 app.include_router(dashboard_router)
+app.include_router(audit_router)

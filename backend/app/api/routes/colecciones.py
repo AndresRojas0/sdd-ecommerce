@@ -3,12 +3,13 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_optional_user, require_admin_role
+from app.core.audit import registrar_auditoria
 from app.db.base import get_db
 from app.models.coleccion import Coleccion
 from app.models.coleccion_producto import ColeccionProducto
@@ -16,6 +17,7 @@ from app.models.producto import Producto
 from app.schemas.coleccion import (
     ColeccionCreate,
     ColeccionDetailResponse,
+    ColeccionDestacadaRequest,
     ColeccionProductoAdd,
     ColeccionResponse,
     ColeccionUpdate,
@@ -197,6 +199,36 @@ def add_producto_to_coleccion(
         db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Error de integridad") from e
     return {"coleccion_id": str(coleccion_id), "product_id": str(body.product_id), "orden": orden}
+
+
+@router.patch("/{coleccion_id}/destacada", response_model=ColeccionResponse)
+def toggle_destacada(
+    coleccion_id: uuid.UUID,
+    body: ColeccionDestacadaRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_admin_role("administrador")),
+):
+    """A-COL-06: marca/desmarca la colección como destacada (UC-AD34)."""
+    col = db.get(Coleccion, coleccion_id)
+    if not col:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Colección no encontrada")
+    antes = {"destacada": col.destacada}
+    col.destacada = body.destacada
+    registrar_auditoria(
+        db,
+        request,
+        current_user,
+        accion="coleccion.destacada",
+        entidad="coleccion",
+        entidad_id=col.id,
+        antes=antes,
+        despues={"destacada": col.destacada},
+    )
+    db.commit()
+    db.refresh(col)
+    cnt = db.scalar(select(func.count()).select_from(ColeccionProducto).where(ColeccionProducto.coleccion_id == col.id)) or 0
+    return _to_response(col, cnt)
 
 
 @router.patch("/{coleccion_id}/productos/reorder", response_model=dict)

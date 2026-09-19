@@ -5,11 +5,12 @@ import uuid
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_active_user, require_admin_role
+from app.core.audit import registrar_auditoria
 from app.core.pricing import precio_efectivo
 from app.db.base import get_db
 from app.models.carrito import Carrito
@@ -26,6 +27,7 @@ from app.schemas.pedido import (
     ConsolidateRequest,
     CreateOrderOnBehalfRequest,
     OrdenCompraResponse,
+    PedidoEditLinesRequest,
     PedidoItemResponse,
     PedidoResponse,
     ReassignRequest,
@@ -36,6 +38,7 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 admin_router = APIRouter(prefix="/admin/orders", tags=["admin-orders"])
 purchase_router = APIRouter(prefix="/admin/purchase-orders", tags=["purchase-orders"])
 stock_router = APIRouter(prefix="/admin/stock", tags=["admin-stock"])
+invoices_router = APIRouter(prefix="/admin/invoices", tags=["admin-invoices"])
 dashboard_router = APIRouter(prefix="/admin/dashboard", tags=["admin-dashboard"])
 
 
@@ -69,6 +72,21 @@ def _pedido_to_response(db: Session, pedido: Pedido) -> PedidoResponse:
         updated_at=pedido.updated_at,
         items=item_resps,
     )
+
+
+def _lineas_resumen(db: Session, pedido: Pedido) -> list[dict]:
+    """Resumen de líneas para el snapshot de auditoría (antes/después)."""
+    items = db.scalars(select(PedidoItem).where(PedidoItem.pedido_id == pedido.id)).all()
+    return [
+        {
+            "line_id": str(it.id),
+            "product_id": str(it.product_id),
+            "cantidad": it.cantidad,
+            "precio_unitario": it.precio_unitario,
+            "subtotal": it.subtotal,
+        }
+        for it in items
+    ]
 
 
 def _generate_oc_numero(db: Session) -> str:
@@ -470,6 +488,7 @@ def create_order_on_behalf(
 def reassign_vendedor(
     pedido_id: uuid.UUID,
     body: ReassignRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_role("administrador")),
 ):
@@ -481,7 +500,19 @@ def reassign_vendedor(
     vendedor = db.get(User, body.to_vendedor_id)
     if not vendedor or vendedor.role not in ("vendedor", "administrador") or not vendedor.is_active:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Vendedor no válido")
+    vendedor_anterior = pedido.vendedor_id
     pedido.vendedor_id = body.to_vendedor_id
+    # RN-27: auditoría quién/cuándo/desde-quién (TC-RN27-02)
+    registrar_auditoria(
+        db,
+        request,
+        current_user,
+        accion="pedido.reasignar",
+        entidad="pedido",
+        entidad_id=pedido.id,
+        antes={"vendedor_id": vendedor_anterior},
+        despues={"vendedor_id": pedido.vendedor_id},
+    )
     db.commit()
     db.refresh(pedido)
     return _pedido_to_response(db, pedido)
@@ -490,6 +521,7 @@ def reassign_vendedor(
 @admin_router.post("/{pedido_id}/accept", response_model=dict)
 def accept_order(
     pedido_id: uuid.UUID,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
@@ -498,6 +530,7 @@ def accept_order(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido no encontrado")
     if pedido.estado != "pendiente":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Solo pendientes pueden aceptarse")
+    estado_anterior = pedido.estado
     # Stock reservation (RN-35) — in same transaction
     # Must succeed before creating OC
     _reserve_stock_for_pedido(db, pedido)
@@ -512,6 +545,16 @@ def accept_order(
     pedido.estado = "aceptado"
     pedido.orden_compra_id = oc.id
     pedido.vendedor_id = pedido.vendedor_id or current_user.id
+    registrar_auditoria(
+        db,
+        request,
+        current_user,
+        accion="pedido.aceptar",
+        entidad="pedido",
+        entidad_id=pedido.id,
+        antes={"estado": estado_anterior},
+        despues={"estado": pedido.estado, "orden_compra_id": oc.id},
+    )
     db.commit()
     db.refresh(pedido)
     db.refresh(oc)
@@ -522,6 +565,7 @@ def accept_order(
 def reject_order(
     pedido_id: uuid.UUID,
     body: RejectRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
@@ -532,11 +576,22 @@ def reject_order(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Solo pendientes o aceptados pueden rechazarse")
     if not body.motivo_rechazo or not body.motivo_rechazo.strip():
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="motivo_rechazo requerido")
+    estado_anterior = pedido.estado
     # If aceptado, release reservation (RN-35 devolucion)
     if pedido.estado == "aceptado":
         _devolucion_stock_for_pedido(db, pedido)
     pedido.estado = "rechazado"
     pedido.motivo_rechazo = body.motivo_rechazo
+    registrar_auditoria(
+        db,
+        request,
+        current_user,
+        accion="pedido.rechazar",
+        entidad="pedido",
+        entidad_id=pedido.id,
+        antes={"estado": estado_anterior},
+        despues={"estado": pedido.estado},
+    )
     db.commit()
     db.refresh(pedido)
     return _pedido_to_response(db, pedido)
@@ -545,6 +600,7 @@ def reject_order(
 @admin_router.post("/consolidate", response_model=dict)
 def consolidate_orders(
     body: ConsolidateRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_role("administrador")),
 ):
@@ -573,9 +629,21 @@ def consolidate_orders(
     )
     db.add(oc)
     db.flush()
+    pedidos_ids = [str(p.id) for p in pedidos]
+    estados_antes = {pid: p.estado for pid, p in zip(pedidos_ids, pedidos)}
     for p in pedidos:
         p.estado = "aceptado"
         p.orden_compra_id = oc.id
+    registrar_auditoria(
+        db,
+        request,
+        current_user,
+        accion="orden_compra.consolidar",
+        entidad="orden_compra",
+        entidad_id=oc.id,
+        antes={"pedido_ids": pedidos_ids, "estados": estados_antes},
+        despues={"pedido_ids": pedidos_ids, "estados": {pid: p.estado for pid, p in zip(pedidos_ids, pedidos)}, "total": total},
+    )
     db.commit()
     db.refresh(oc)
     return {
@@ -592,6 +660,7 @@ def consolidate_orders(
 @admin_router.post("/{pedido_id}/facturar", response_model=dict)
 def facturar_order(
     pedido_id: uuid.UUID,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_role("administrador")),
 ):
@@ -628,6 +697,16 @@ def facturar_order(
     for p in oc_pedidos:
         _confirm_stock_for_pedido(db, p)
         p.estado = "facturado"
+    registrar_auditoria(
+        db,
+        request,
+        current_user,
+        accion="pedido.facturar",
+        entidad="pedido",
+        entidad_id=pedido.id,
+        antes={"estado": "aceptado"},
+        despues={"estado": pedido.estado, "factura_id": factura.id},
+    )
     db.commit()
     db.refresh(factura)
     # Build response with updated pedidos
@@ -649,6 +728,7 @@ def facturar_order(
 @admin_router.post("/{pedido_id}/en-logistica", response_model=PedidoResponse)
 def en_logistica_order(
     pedido_id: uuid.UUID,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
@@ -657,7 +737,18 @@ def en_logistica_order(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido no encontrado")
     if pedido.estado != "facturado":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Solo pedidos facturados pueden pasar a en_logistica (RN-28)")
+    estado_anterior = pedido.estado
     pedido.estado = "en_logistica"
+    registrar_auditoria(
+        db,
+        request,
+        current_user,
+        accion="pedido.en_logistica",
+        entidad="pedido",
+        entidad_id=pedido.id,
+        antes={"estado": estado_anterior},
+        despues={"estado": pedido.estado},
+    )
     db.commit()
     db.refresh(pedido)
     return _pedido_to_response(db, pedido)
@@ -666,6 +757,7 @@ def en_logistica_order(
 @admin_router.post("/{pedido_id}/entregar", response_model=PedidoResponse)
 def entregar_order(
     pedido_id: uuid.UUID,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
@@ -674,7 +766,121 @@ def entregar_order(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido no encontrado")
     if pedido.estado != "en_logistica":
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Solo pedidos en_logistica pueden entregarse (RN-28)")
+    estado_anterior = pedido.estado
     pedido.estado = "entregado"
+    registrar_auditoria(
+        db,
+        request,
+        current_user,
+        accion="pedido.entregar",
+        entidad="pedido",
+        entidad_id=pedido.id,
+        antes={"estado": estado_anterior},
+        despues={"estado": pedido.estado},
+    )
+    db.commit()
+    db.refresh(pedido)
+    return _pedido_to_response(db, pedido)
+
+
+@admin_router.patch("/{pedido_id}/lines", response_model=PedidoResponse)
+def edit_order_lines(
+    pedido_id: uuid.UUID,
+    body: PedidoEditLinesRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
+):
+    """A-PED-06: edición de líneas de un pedido — solo `pendiente` (RN-28/UC-AD17).
+
+    Operaciones: cambiar cantidad de una línea, quitar líneas, agregar líneas.
+    ADR-008: todas las líneas se re-snapshotean a precios vigentes
+    (unitario = precio efectivo, lista = precio de lista).
+    """
+    pedido = db.get(Pedido, pedido_id)
+    if not pedido:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pedido no encontrado")
+    if pedido.estado != "pendiente":
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Solo pedidos pendientes son editables (RN-28)")
+
+    items = db.scalars(select(PedidoItem).where(PedidoItem.pedido_id == pedido.id)).all()
+    items_by_id = {it.id: it for it in items}
+    lineas_antes = _lineas_resumen(db, pedido)
+    total_antes = pedido.total
+
+    remove_ids = set(body.remove)
+    faltantes = [str(rid) for rid in remove_ids if rid not in items_by_id]
+    if faltantes:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Líneas inexistentes en el pedido: {', '.join(faltantes)}")
+    # El pedido no puede quedar vacío: (existentes - removidas + agregadas) > 0
+    if len(items) - len(remove_ids) + len(body.add) <= 0:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="El pedido no puede quedar sin líneas")
+
+    # Agregar líneas (product_id + cantidad) — snapshot inmediato a precio vigente
+    added_items: list[PedidoItem] = []
+    for line_add in body.add:
+        prod = db.get(Producto, line_add.product_id)
+        if not prod or prod.deleted_at is not None or prod.estado_publicacion != "publicado":
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Producto {line_add.product_id} no disponible")
+        price = precio_efectivo(prod)
+        new_item = PedidoItem(
+            pedido_id=pedido.id,
+            product_id=prod.id,
+            cantidad=line_add.cantidad,
+            precio_unitario=price,
+            precio_lista=prod.precio,
+            subtotal=line_add.cantidad * price,
+        )
+        db.add(new_item)
+        added_items.append(new_item)
+
+    # Quitar líneas (por line_id)
+    for rid in remove_ids:
+        db.delete(items_by_id[rid])
+
+    # Cambiar cantidades (por line_id)
+    for upd in body.updates:
+        it = items_by_id.get(upd.line_id)
+        if it is None:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Línea {upd.line_id} no existe en el pedido")
+        if upd.cantidad <= 0:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="cantidad debe ser >0")
+        it.cantidad = upd.cantidad
+
+    # ADR-008: re-snapshot de precios vigentes en TODAS las líneas resultantes
+    # (en memoria: sobrevivientes + agregadas) y recálculo de subtotales/total.
+    final_items = [it for line_id, it in items_by_id.items() if line_id not in remove_ids] + added_items
+    new_subtotal = Decimal("0")
+    for it in final_items:
+        prod = db.get(Producto, it.product_id)
+        if prod is not None and prod.deleted_at is None:
+            it.precio_unitario = precio_efectivo(prod)
+            it.precio_lista = prod.precio
+        it.subtotal = it.cantidad * it.precio_unitario
+        new_subtotal += it.subtotal
+    pedido.subtotal = new_subtotal
+    pedido.total = new_subtotal
+
+    lineas_despues = [
+        {
+            "line_id": str(it.id) if it.id is not None else None,
+            "product_id": str(it.product_id),
+            "cantidad": it.cantidad,
+            "precio_unitario": it.precio_unitario,
+            "subtotal": it.subtotal,
+        }
+        for it in final_items
+    ]
+    registrar_auditoria(
+        db,
+        request,
+        current_user,
+        accion="pedido.editar_lineas",
+        entidad="pedido",
+        entidad_id=pedido.id,
+        antes={"lineas": lineas_antes, "total": total_antes},
+        despues={"lineas": lineas_despues, "total": pedido.total},
+    )
     db.commit()
     db.refresh(pedido)
     return _pedido_to_response(db, pedido)
@@ -735,6 +941,50 @@ def list_stock(
             "updated_at": s.updated_at.isoformat() if s.updated_at else None,
         }
         for s in rows
+    ]
+    return {"total": total, "limit": limit, "offset": offset, "items": items}
+
+
+@stock_router.get("/movements", response_model=dict)
+def list_stock_movements(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
+    product_id: uuid.UUID | None = Query(default=None),
+    tipo: str | None = Query(default=None, description="reserva|confirmacion|devolucion|ajuste"),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    """A-STK-03: historial de movimientos_stock (solo lectura, RN-35).
+
+    Declarado ANTES de GET /admin/stock/{product_id} para que FastAPI
+    no sombree la ruta literal con el path param.
+    """
+    filters = []
+    if product_id is not None:
+        filters.append(MovimientoStock.product_id == product_id)
+    if tipo is not None:
+        if tipo not in ("reserva", "confirmacion", "devolucion", "ajuste"):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="tipo debe ser reserva|confirmacion|devolucion|ajuste")
+        filters.append(MovimientoStock.tipo == tipo)
+    base = select(MovimientoStock)
+    count_base = select(func.count()).select_from(MovimientoStock)
+    if filters:
+        from sqlalchemy import and_
+
+        base = base.where(and_(*filters))
+        count_base = count_base.where(and_(*filters))
+    total = db.scalar(count_base) or 0
+    rows = db.scalars(base.order_by(MovimientoStock.created_at.desc()).limit(limit).offset(offset)).all()
+    items = [
+        {
+            "id": str(m.id),
+            "product_id": str(m.product_id),
+            "tipo": m.tipo,
+            "cantidad": str(m.cantidad),
+            "pedido_id": str(m.pedido_id) if m.pedido_id else None,
+            "created_at": m.created_at.isoformat() if m.created_at else None,
+        }
+        for m in rows
     ]
     return {"total": total, "limit": limit, "offset": offset, "items": items}
 
@@ -810,6 +1060,60 @@ def update_stock(
         "cantidad_reservada": str(stock.cantidad_reservada),
         "updated_at": stock.updated_at.isoformat() if stock.updated_at else None,
     }
+
+
+# ---------------------------------------------------------------------------
+# Invoices — RN-36 (A-FAC-01/02: solo lectura, nunca DELETE)
+# ---------------------------------------------------------------------------
+
+
+def _factura_to_dict(f: Factura) -> dict:
+    return {
+        "id": str(f.id),
+        "orden_compra_id": str(f.orden_compra_id),
+        "numero_fiscal": f.numero_fiscal,
+        "total": str(f.total),
+        "created_by": str(f.created_by) if f.created_by else None,
+        "created_at": f.created_at.isoformat() if f.created_at else None,
+    }
+
+
+@invoices_router.get("", response_model=dict)
+def list_invoices(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
+    orden_compra_id: uuid.UUID | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+):
+    """A-FAC-01: lista paginada de facturas (filtro opcional por OC)."""
+    base = select(Factura)
+    count_base = select(func.count()).select_from(Factura)
+    if orden_compra_id is not None:
+        base = base.where(Factura.orden_compra_id == orden_compra_id)
+        count_base = count_base.where(Factura.orden_compra_id == orden_compra_id)
+    total = db.scalar(count_base) or 0
+    facturas = db.scalars(base.order_by(Factura.created_at.desc()).limit(limit).offset(offset)).all()
+    return {"total": total, "limit": limit, "offset": offset, "items": [_factura_to_dict(f) for f in facturas]}
+
+
+@invoices_router.get("/{factura_id}", response_model=dict)
+def get_invoice(
+    factura_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
+):
+    """A-FAC-02: detalle de factura (inmutable, RN-36)."""
+    factura = db.get(Factura, factura_id)
+    if not factura:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Factura no encontrada")
+    data = _factura_to_dict(factura)
+    oc = db.get(OrdenCompra, factura.orden_compra_id)
+    if oc:
+        data["orden_compra"] = OrdenCompraResponse.model_validate(oc).model_dump()
+    pedidos = db.scalars(select(Pedido).where(Pedido.orden_compra_id == factura.orden_compra_id)).all()
+    data["pedidos"] = [_pedido_to_response(db, p).model_dump() for p in pedidos]
+    return data
 
 
 # ---------------------------------------------------------------------------

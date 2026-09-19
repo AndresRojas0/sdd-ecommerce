@@ -19,6 +19,19 @@ class UpdateAvatarRequest(BaseModel):
     model_config = {"extra": "forbid"}
 
 
+class AdminUserProfileUpdate(BaseModel):
+    """A-USR-03: edición acotada de perfil por staff.
+
+    `extra=forbid` rechaza con 422 cualquier campo no listado —
+    en particular `role` y `password` nunca son editables aquí.
+    """
+
+    display_name: str | None = None
+    avatar: str | None = None
+
+    model_config = {"extra": "forbid"}
+
+
 class AdminUserResponse(BaseModel):
     id: uuid.UUID
     email: str

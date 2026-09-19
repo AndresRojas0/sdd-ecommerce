@@ -53,6 +53,12 @@ class ReorderBody(BaseModel):
     product_ids: list[uuid.UUID]
 
 
+class ColeccionDestacadaRequest(BaseModel):
+    """A-COL-06: toggle destacada."""
+
+    destacada: bool
+
+
 class ProductoColeccionBrief(BaseModel):
     id: uuid.UUID
     titulo: str

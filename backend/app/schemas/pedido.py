@@ -46,6 +46,29 @@ class ReassignRequest(BaseModel):
     to_vendedor_id: uuid.UUID
 
 
+class LineCantidadUpdate(BaseModel):
+    line_id: uuid.UUID
+    cantidad: Decimal
+
+
+class LineAdd(BaseModel):
+    product_id: uuid.UUID
+    cantidad: Decimal
+
+
+class PedidoEditLinesRequest(BaseModel):
+    """A-PED-06: edición de líneas (solo pedidos `pendiente`).
+
+    - updates: cambia `cantidad` de líneas existentes (por line_id)
+    - remove: line_ids a eliminar
+    - add: nuevas líneas {product_id, cantidad}
+    """
+
+    updates: list[LineCantidadUpdate] = []
+    remove: list[uuid.UUID] = []
+    add: list[LineAdd] = []
+
+
 class RejectRequest(BaseModel):
     motivo_rechazo: str
 

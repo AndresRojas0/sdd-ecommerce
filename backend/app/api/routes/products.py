@@ -12,6 +12,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.api.deps import get_optional_user, require_admin_role
+from app.core.audit import registrar_auditoria
 from app.core.config import get_settings
 from app.core.pricing import descuento_activo, descuento_porcentaje, precio_efectivo
 from app.db.base import get_db
@@ -420,6 +421,7 @@ def update_product(
 def set_discount(
     product_id: uuid.UUID,
     body: DiscountSetRequest,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
@@ -438,9 +440,28 @@ def set_discount(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="descuento_desde debe ser anterior a descuento_hasta",
         )
+    oferta_antes = {
+        "precio_descuento": prod.precio_descuento,
+        "descuento_desde": prod.descuento_desde,
+        "descuento_hasta": prod.descuento_hasta,
+    }
     prod.precio_descuento = body.precio_descuento
     prod.descuento_desde = body.descuento_desde
     prod.descuento_hasta = body.descuento_hasta
+    registrar_auditoria(
+        db,
+        request,
+        current_user,
+        accion="producto.descuento_definir",
+        entidad="producto",
+        entidad_id=prod.id,
+        antes=oferta_antes,
+        despues={
+            "precio_descuento": prod.precio_descuento,
+            "descuento_desde": prod.descuento_desde,
+            "descuento_hasta": prod.descuento_hasta,
+        },
+    )
     db.commit()
     db.refresh(prod)
     return _to_response(prod, db, include_admin_discount=True)
@@ -449,15 +470,31 @@ def set_discount(
 @router.delete("/{product_id}/discount", status_code=status.HTTP_204_NO_CONTENT)
 def remove_discount(
     product_id: uuid.UUID,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
     prod = db.get(Producto, product_id)
     if not prod or prod.precio_descuento is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto sin oferta activa de descuento")
+    oferta_antes = {
+        "precio_descuento": prod.precio_descuento,
+        "descuento_desde": prod.descuento_desde,
+        "descuento_hasta": prod.descuento_hasta,
+    }
     prod.precio_descuento = None
     prod.descuento_desde = None
     prod.descuento_hasta = None
+    registrar_auditoria(
+        db,
+        request,
+        current_user,
+        accion="producto.descuento_quitar",
+        entidad="producto",
+        entidad_id=prod.id,
+        antes=oferta_antes,
+        despues={"precio_descuento": None, "descuento_desde": None, "descuento_hasta": None},
+    )
     db.commit()
     return None
 
@@ -492,6 +529,7 @@ def delete_product(
 @router.patch("/{product_id}/visibility", response_model=ProductResponse)
 def toggle_visibility(
     product_id: uuid.UUID,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(require_admin_role("administrador")),
     estado: str = Query(..., description="publicado|oculto"),
@@ -503,7 +541,18 @@ def toggle_visibility(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Producto no encontrado")
     if prod.deleted_at is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Producto eliminado no puede cambiar visibilidad")
+    estado_anterior = prod.estado_publicacion
     prod.estado_publicacion = estado
+    registrar_auditoria(
+        db,
+        request,
+        current_user,
+        accion="producto.visibilidad",
+        entidad="producto",
+        entidad_id=prod.id,
+        antes={"estado_publicacion": estado_anterior},
+        despues={"estado_publicacion": prod.estado_publicacion},
+    )
     db.commit()
     db.refresh(prod)
     return _to_response(prod, db, include_admin_discount=True)

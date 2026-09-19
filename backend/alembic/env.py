@@ -68,11 +68,10 @@ def run_migrations_online() -> None:
 
 
 if config is not None:
-    try:
-        if context.is_offline_mode():
-            run_migrations_offline()
-        else:
-            run_migrations_online()
-    except Exception:
-        # Not running inside Alembic context (proxy not established) — import-safe
-        pass
+    # Inside a real Alembic run: failures must surface (a swallowed
+    # migration error here fakes success in deploys). Import-time safety
+    # is already handled by the `config is not None` guard above.
+    if context.is_offline_mode():
+        run_migrations_offline()
+    else:
+        run_migrations_online()

@@ -15,6 +15,7 @@ from app.models.pedido import Pedido  # noqa: F401
 from app.models.pedido_item import PedidoItem  # noqa: F401
 from app.models.producto import Producto  # noqa: F401
 from app.models.stock import Stock  # noqa: F401
+from app.models.staff_audit import StaffAudit  # noqa: F401
 from app.models.producto_categoria import ProductoCategoria  # noqa: F401
 from app.models.producto_etiqueta import ProductoEtiqueta  # noqa: F401
 from app.models.refresh_token import RefreshToken  # noqa: F401
@@ -41,6 +42,7 @@ __all__ = [
     "ProductoEtiqueta",
     "RefreshToken",
     "Stock",
+    "StaffAudit",
     "UnidadMedida",
     "User",
     "Visita",
