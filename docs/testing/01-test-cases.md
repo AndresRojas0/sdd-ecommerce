@@ -75,3 +75,11 @@ de uso. La columna endpoint se completa al diseñar la API
 | -- | --------- | -------- | -------- |
 | TC-AUTH10-01 | Token de tienda contra endpoint admin (y viceversa) | 401/403 por audiencia | A-AUTH-01 / A-AUTH-04 (aislamiento de audiencia) |
 | TC-AUTH12-01 | Desactivar/reactivar usuario desde admin togglea `is_active` conservando datos | Historial íntegro | A-USR-04 |
+| TC-AUTH10-02 | Operaciones admin por grupo de router rechazan token de tienda (comprador) y aceptan token admin | 401/403 vs operativos | A-PROD-03, A-CAT-02, A-ETIQ-02, A-UNID-02, A-COL-02, A-PED-03, A-STK-04, A-DASH-01 |
+
+## Descuentos (ADR-008)
+
+| ID | Escenario | Esperado | Endpoint |
+| -- | --------- | -------- | -------- |
+| TC-ADR008-01 | Oferta con vigencia: efectivo en catálogo, snapshots en pedido (unit+lista), re-snapshot al editar pendiente | Precios exactos | PUT /products/{id}/discount (A-PROD-08) |
+| TC-ADR008-02 | Orden con_descuento: ofertas activas primero, mayor % primero | Orden verificado | S-CAT-01 |

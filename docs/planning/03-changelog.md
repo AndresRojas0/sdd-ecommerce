@@ -10,5 +10,6 @@ El changelog no registra código: eso vive en git.
 | 2026-09-16 | Diseño de 80 endpoints REST + binding de 32 TCs. | `8ab671f` |
 | 2026-09-16 | Resolución de decisiones abiertas: ADR-008, rate limiting, auditoría de staff, CI/CD, migraciones, producción. | `f83a167` |
 | 2026-09-16 | Materialización de carpetas andamio (planning/specs/reviews). | este commit |
+| 2026-09-16 | M6 descuentos (ADR-008) implementado + reconciliación de diseño de API + TCs nuevos. | `36ed99b` / este change |
 
 ¹ Commits previos a la ventana de 20 del `git log` usada para el bootstrap.
