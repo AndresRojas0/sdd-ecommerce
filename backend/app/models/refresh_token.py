@@ -9,11 +9,16 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.jwt import AUD_STORE
 from app.db.base import Base
 
 
 class RefreshToken(Base):
-    """Rotating refresh token with family-based reuse detection (ADR-003)."""
+    """Rotating refresh token with family-based reuse detection (ADR-003).
+
+    ``aud`` stamps the audience that issued the row (ADR-005): each refresh
+    endpoint only accepts rows minted for its own audience.
+    """
 
     __tablename__ = "refresh_tokens"
     __table_args__ = (
@@ -44,6 +49,9 @@ class RefreshToken(Base):
     )
     revoked: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default=text("false"), default=False
+    )
+    aud: Mapped[str] = mapped_column(
+        String(10), nullable=False, server_default=text("'store'"), default=AUD_STORE
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

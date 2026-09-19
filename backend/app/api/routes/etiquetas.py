@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_active_user, require_role
+from app.api.deps import require_admin_role
 from app.db.base import get_db
 from app.models.etiqueta import Etiqueta
 from app.schemas.etiqueta import EtiquetaCreate, EtiquetaResponse
@@ -36,7 +36,7 @@ def autocomplete(q: str = Query(..., min_length=1), db: Session = Depends(get_db
 def create_etiqueta(
     body: EtiquetaCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("vendedor", "administrador")),
+    current_user=Depends(require_admin_role("vendedor", "administrador")),
 ):
     # Create if not exists — but return 409 if duplicate slug/nombre? Spec says create if not exists
     existing = db.scalar(select(Etiqueta).where((Etiqueta.nombre == body.nombre) | (Etiqueta.slug == body.slug)))
@@ -57,7 +57,7 @@ def create_etiqueta(
 def delete_etiqueta(
     etiqueta_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     tag = db.get(Etiqueta, etiqueta_id)
     if not tag:

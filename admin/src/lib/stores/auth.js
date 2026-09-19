@@ -11,7 +11,7 @@ export async function fetchMe() {
 	authLoading.set(true);
 	authError.set(null);
 	try {
-		const data = await api.get('/auth/me');
+		const data = await api.get('/admin/auth/me');
 		// verify role is admin or vendedor
 		if (data.role !== 'administrador' && data.role !== 'vendedor') {
 			user.set(null);
@@ -44,13 +44,13 @@ export async function login(email, password) {
 	authLoading.set(true);
 	authError.set(null);
 	try {
-		const res = await api.post('/auth/login', { email, password });
+		const res = await api.post('/admin/auth/login', { email, password });
 		const me = await fetchMe();
 		// fetchMe already checks role
 		if (!me) {
 			// if login succeeded but role invalid, logout
 			try {
-				await api.post('/auth/logout', {});
+				await api.post('/admin/auth/logout', {});
 			} catch {}
 			throw new Error('Acceso denegado: rol no autorizado');
 		}
@@ -78,7 +78,7 @@ export async function login(email, password) {
 
 export async function logout() {
 	try {
-		await api.post('/auth/logout', {});
+		await api.post('/admin/auth/logout', {});
 	} catch {}
 	user.set(null);
 }

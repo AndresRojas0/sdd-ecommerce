@@ -11,7 +11,7 @@ from sqlalchemy import and_, delete, func, or_, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
-from app.api.deps import get_current_active_user, get_optional_user, require_role
+from app.api.deps import get_optional_user, require_admin_role
 from app.core.config import get_settings
 from app.db.base import get_db
 from app.models.categoria import Categoria
@@ -128,7 +128,7 @@ def _to_response(prod: Producto, db: Session) -> ProductResponse:
 def create_product(
     body: ProductCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
     # Validate unidad exists
     unidad = db.get(UnidadMedida, body.unidad_venta_id)
@@ -342,7 +342,7 @@ def update_product(
     product_id: uuid.UUID,
     body: ProductUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
     prod = db.get(Producto, product_id)
     if not prod:
@@ -400,7 +400,7 @@ def update_product(
 def delete_product(
     product_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("administrador")),
+    current_user: User = Depends(require_admin_role("administrador")),
 ):
     prod = db.get(Producto, product_id)
     if not prod:
@@ -422,7 +422,7 @@ def delete_product(
 def toggle_visibility(
     product_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("administrador")),
+    current_user: User = Depends(require_admin_role("administrador")),
     estado: str = Query(..., description="publicado|oculto"),
 ):
     if estado not in ("publicado", "oculto"):
@@ -447,7 +447,7 @@ def toggle_visibility(
 def product_stats(
     product_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
     prod = db.get(Producto, product_id)
     if not prod:

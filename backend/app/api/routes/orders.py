@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_active_user, require_role
+from app.api.deps import get_current_active_user, require_admin_role
 from app.db.base import get_db
 from app.models.carrito import Carrito
 from app.models.carrito_item import CarritoItem
@@ -361,7 +361,7 @@ def duplicate_rejected(
 @admin_router.get("", response_model=dict)
 def admin_list_orders(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
     estado: str | None = Query(default=None),
     user_id: uuid.UUID | None = Query(default=None),
     vendedor_id: uuid.UUID | None = Query(default=None),
@@ -392,7 +392,7 @@ def admin_list_orders(
 def create_order_on_behalf(
     body: CreateOrderOnBehalfRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
     """UC-V08: Vendedor crea pedido en nombre de un cliente."""
     cliente = db.get(User, body.user_id)
@@ -451,7 +451,7 @@ def reassign_vendedor(
     pedido_id: uuid.UUID,
     body: ReassignRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("administrador")),
+    current_user: User = Depends(require_admin_role("administrador")),
 ):
     pedido = db.get(Pedido, pedido_id)
     if not pedido:
@@ -471,7 +471,7 @@ def reassign_vendedor(
 def accept_order(
     pedido_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
     pedido = db.get(Pedido, pedido_id)
     if not pedido:
@@ -503,7 +503,7 @@ def reject_order(
     pedido_id: uuid.UUID,
     body: RejectRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
     pedido = db.get(Pedido, pedido_id)
     if not pedido:
@@ -526,7 +526,7 @@ def reject_order(
 def consolidate_orders(
     body: ConsolidateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("administrador")),
+    current_user: User = Depends(require_admin_role("administrador")),
 ):
     if not body.pedido_ids or len(body.pedido_ids) < 2:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Se requieren al menos 2 pedidos")
@@ -573,7 +573,7 @@ def consolidate_orders(
 def facturar_order(
     pedido_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("administrador")),
+    current_user: User = Depends(require_admin_role("administrador")),
 ):
     """Facturar OC via pedido: aceptado -> facturado + confirmación stock + factura."""
     pedido = db.get(Pedido, pedido_id)
@@ -630,7 +630,7 @@ def facturar_order(
 def en_logistica_order(
     pedido_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
     pedido = db.get(Pedido, pedido_id)
     if not pedido:
@@ -647,7 +647,7 @@ def en_logistica_order(
 def entregar_order(
     pedido_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
     pedido = db.get(Pedido, pedido_id)
     if not pedido:
@@ -668,7 +668,7 @@ def entregar_order(
 @purchase_router.get("", response_model=dict)
 def list_purchase_orders(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ):
@@ -682,7 +682,7 @@ def list_purchase_orders(
 def get_purchase_order(
     oc_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
     oc = db.get(OrdenCompra, oc_id)
     if not oc:
@@ -701,7 +701,7 @@ def get_purchase_order(
 @stock_router.get("", response_model=dict)
 def list_stock(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ):
@@ -723,7 +723,7 @@ def list_stock(
 def get_stock(
     product_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
     stock = db.get(Stock, product_id)
     if not stock:
@@ -748,7 +748,7 @@ def update_stock(
     product_id: uuid.UUID,
     body: dict,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("administrador")),
+    current_user: User = Depends(require_admin_role("administrador")),
 ):
     """Manual ajuste de stock — tipo ajuste (RN-35)."""
     prod = db.get(Producto, product_id)
@@ -800,7 +800,7 @@ def update_stock(
 @dashboard_router.get("/totales-hoy", response_model=dict)
 def totales_hoy(
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_role("vendedor", "administrador")),
+    current_user: User = Depends(require_admin_role("vendedor", "administrador")),
 ):
     """RN-37: suma de facturas.total cuya created_at cae en el día corriente."""
     # Use DB date comparison compatible with both PG and SQLite

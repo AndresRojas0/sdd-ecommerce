@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import uuid
 
-from tests.conftest import auth_client_for, create_product_fixture
+from tests.conftest import admin_auth_header, auth_client_for, create_product_fixture
 
 
 def test_visit_dedup_RN08(client, categoria, unidad, vendedor):
@@ -72,7 +72,7 @@ def test_rating_with_accepted_order_RN33_RN21(client, categoria, unidad, vendedo
     client.delete("/carts/me", headers=headers_compr)
     client.post("/carts/me/items", json={"product_id": prod["id"], "cantidad": "1"}, headers=headers_compr)
     order = client.post("/orders", headers=headers_compr).json()
-    headers_admin = auth_client_for(client, admin)
+    headers_admin = admin_auth_header(client, admin.email)
     client.post(f"/admin/orders/{order['id']}/accept", headers=headers_admin)
     # Now rate
     resp = client.post(f"/products/{prod['id']}/ratings", json={"estrellas": 4}, headers=headers_compr)

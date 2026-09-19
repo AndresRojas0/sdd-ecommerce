@@ -60,7 +60,7 @@
 		changeSuccess = null;
 		// This flow requires an authenticated token. Since MUST_CHANGE blocks login,
 		// we attempt to obtain a token via a direct login bypass: try to call
-		// POST /auth/login but the token is not issued. So we show guidance.
+		// POST /admin/auth/login but the token is not issued. So we show guidance.
 		// However we still try the normal change-password flow: first login with current creds
 		// to get token (if backend allowed), then change.
 		try {
@@ -72,12 +72,12 @@
 			// If no token, we inform user to use curl fallback.
 
 			// Try to get a token by calling login and ignoring MUST_CHANGE error
-			// by attempting a direct fetch to /auth/change-password-force with auth header from a generated token
+			// by attempting a direct fetch to /admin/auth/change-password-force with auth header from a generated token
 			// Fallback: instruct user.
 
-			// Attempt naive: call /auth/change-password-force via api (will add cookies if present)
+			// Attempt naive: call /admin/auth/change-password-force via api (will add cookies if present)
 			// But we don't have cookies, so it will 401. We'll catch and show help.
-			await api.post('/auth/change-password-force', {
+			await api.post('/admin/auth/change-password-force', {
 				current_password: currentPassword,
 				new_password: newPassword
 			});

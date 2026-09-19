@@ -4,7 +4,7 @@ from __future__ import annotations
 import uuid
 from decimal import Decimal
 
-from tests.conftest import auth_client_for, create_product_fixture
+from tests.conftest import admin_auth_header, auth_client_for, create_product_fixture
 
 
 def test_cart_server_side_survives(client, categoria, unidad, vendedor, comprador):
@@ -67,7 +67,7 @@ def test_order_edit_only_pending_RN28(client, categoria, unidad, vendedor, compr
     resp = client.put(f"/orders/{oid}", json={"items": [{"product_id": prod2["id"], "cantidad": "5"}]}, headers=headers)
     assert resp.status_code == 200
     # Accept order as admin
-    headers_admin = auth_client_for(client, admin)
+    headers_admin = admin_auth_header(client, admin.email)
     resp_acc = client.post(f"/admin/orders/{oid}/accept", headers=headers_admin)
     assert resp_acc.status_code == 200
     # Edit after accepted should 409
@@ -82,7 +82,7 @@ def test_order_duplicate_rejected_RN28(client, categoria, unidad, vendedor, comp
     client.post("/carts/me/items", json={"product_id": prod["id"], "cantidad": "1"}, headers=headers)
     order = client.post("/orders", headers=headers).json()
     oid = order["id"]
-    headers_admin = auth_client_for(client, admin)
+    headers_admin = admin_auth_header(client, admin.email)
     client.post(f"/admin/orders/{oid}/reject", json={"motivo_rechazo": "sin stock"}, headers=headers_admin)
     # Duplicate
     resp = client.post(f"/orders/{oid}/duplicate", headers=headers)
@@ -102,7 +102,7 @@ def test_order_consolidate_RN29(client, categoria, unidad, vendedor, comprador, 
     orders = client.get("/orders", headers=headers).json()["items"]
     pending_ids = [o["id"] for o in orders if o["estado"] == "pendiente"][-2:]
     assert len(pending_ids) >= 2
-    headers_admin = auth_client_for(client, admin)
+    headers_admin = admin_auth_header(client, admin.email)
     resp = client.post("/admin/orders/consolidate", json={"pedido_ids": pending_ids}, headers=headers_admin)
     assert resp.status_code == 200
     assert "orden_compra" in resp.json()
@@ -145,7 +145,7 @@ def test_order_reassign_RN27(client, categoria, unidad, vendedor, comprador, adm
     db_session.add(v2)
     db_session.commit()
     db_session.refresh(v2)
-    headers_admin = auth_client_for(client, admin)
+    headers_admin = admin_auth_header(client, admin.email)
     resp = client.patch(f"/admin/orders/{order['id']}/reassign", json={"to_vendedor_id": str(v2.id)}, headers=headers_admin)
     assert resp.status_code == 200
     assert resp.json()["vendedor_id"] == str(v2.id)

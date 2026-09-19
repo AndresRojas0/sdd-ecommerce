@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import uuid
 
-from tests.conftest import auth_client_for, create_product_fixture
+from tests.conftest import admin_auth_header, auth_client_for, create_product_fixture
 
 
 def test_create_product_happy(client, categoria, unidad, vendedor, etiqueta):
@@ -13,7 +13,7 @@ def test_create_product_happy(client, categoria, unidad, vendedor, etiqueta):
 
 
 def test_create_product_requires_category_RN01(client, unidad, vendedor):
-    headers = auth_client_for(client, vendedor)
+    headers = admin_auth_header(client, vendedor.email)
     resp = client.post(
         "/products",
         json={
@@ -30,7 +30,7 @@ def test_create_product_requires_category_RN01(client, unidad, vendedor):
 
 def test_create_product_duplicate_slug_409(client, categoria, unidad, vendedor):
     sfx = uuid.uuid4().hex[:6]
-    headers = auth_client_for(client, vendedor)
+    headers = admin_auth_header(client, vendedor.email)
     payload = {
         "titulo": f"P {sfx}",
         "slug": f"dup-{sfx}",
@@ -77,16 +77,16 @@ def test_sorting_RN07(client, categoria, unidad, vendedor):
 
 
 def test_categoria_crud_admin_only(client, comprador, admin):
-    # Comprador cannot create
+    # Comprador cannot create: its store-aud token is rejected at the audience layer (ADR-005)
     headers_comp = auth_client_for(client, comprador)
     resp = client.post(
         "/categorias",
         json={"nombre": "nueva cat", "slug": "nueva-cat", "color": "#FF0000"},
         headers=headers_comp,
     )
-    assert resp.status_code == 403
-    # Admin can
-    headers_admin = auth_client_for(client, admin)
+    assert resp.status_code == 401
+    # Admin can (admin-aud token via /admin/auth/login)
+    headers_admin = admin_auth_header(client, admin.email)
     suffix = uuid.uuid4().hex[:4]
     resp2 = client.post(
         "/categorias",
@@ -104,7 +104,7 @@ def test_categoria_crud_admin_only(client, comprador, admin):
 
 
 def test_etiqueta_autocomplete_RN03(client, vendedor):
-    headers = auth_client_for(client, vendedor)
+    headers = admin_auth_header(client, vendedor.email)
     # Create a tag
     suffix = uuid.uuid4().hex[:4]
     client.post(
@@ -118,7 +118,7 @@ def test_etiqueta_autocomplete_RN03(client, vendedor):
 
 
 def test_unidad_create_extensible_RN23(client, admin):
-    headers = auth_client_for(client, admin)
+    headers = admin_auth_header(client, admin.email)
     suffix = uuid.uuid4().hex[:4]
     resp = client.post(
         "/unidades-medida", json={"nombre": f"litro{suffix}", "simbolo": "L"}, headers=headers
@@ -129,7 +129,7 @@ def test_unidad_create_extensible_RN23(client, admin):
 def test_product_visibility_RN31(client, categoria, unidad, admin, vendedor):
     prod = create_product_fixture(client, categoria, unidad, vendedor)
     pid = prod["id"]
-    headers_admin = auth_client_for(client, admin)
+    headers_admin = admin_auth_header(client, admin.email)
     # Hide
     resp = client.patch(f"/products/{pid}/visibility", params={"estado": "oculto"}, headers=headers_admin)
     assert resp.status_code == 200
@@ -147,7 +147,7 @@ def test_product_visibility_RN31(client, categoria, unidad, admin, vendedor):
 def test_product_logical_delete_RN32(client, categoria, unidad, admin, vendedor):
     prod = create_product_fixture(client, categoria, unidad, vendedor)
     pid = prod["id"]
-    headers_admin = auth_client_for(client, admin)
+    headers_admin = admin_auth_header(client, admin.email)
     resp = client.delete(f"/products/{pid}", headers=headers_admin)
     assert resp.status_code == 204
     # Public get should 404

@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_role
+from app.api.deps import require_admin_role
 from app.db.base import get_db
 from app.models.unidad_medida import UnidadMedida
 from app.schemas.unidad import UnidadCreate, UnidadResponse
@@ -25,7 +25,7 @@ def list_unidades(db: Session = Depends(get_db)):
 def create_unidad(
     body: UnidadCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     unidad = UnidadMedida(nombre=body.nombre, simbolo=body.simbolo)
     db.add(unidad)
@@ -42,7 +42,7 @@ def create_unidad(
 def delete_unidad(
     unidad_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     unidad = db.get(UnidadMedida, unidad_id)
     if not unidad:

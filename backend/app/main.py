@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes.admin_auth import router as admin_auth_router
 from app.api.routes.admin_users import router as admin_users_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.carts import router as carts_router
@@ -62,6 +63,7 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(auth_router)
+app.include_router(admin_auth_router)
 app.include_router(users_router)
 app.include_router(admin_users_router)
 app.include_router(categorias_router)

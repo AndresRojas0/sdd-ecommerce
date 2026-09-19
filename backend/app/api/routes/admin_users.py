@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import require_role
+from app.api.deps import require_admin_role
 from app.db.base import get_db
 from app.models.user import User
 from app.schemas.user import AdminUserResponse
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/admin/users", tags=["admin-users"])
 @router.get("", response_model=dict)
 def list_users(
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador", "vendedor")),
+    current_user=Depends(require_admin_role("administrador", "vendedor")),
     role: str | None = Query(default=None),
     is_active: bool | None = Query(default=None),
     search: str | None = Query(default=None, description="Filtra por email o display_name (UC-V03)"),
@@ -52,7 +52,7 @@ def list_users(
 def get_user(
     user_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador", "vendedor")),
+    current_user=Depends(require_admin_role("administrador", "vendedor")),
 ):
     user = db.get(User, user_id)
     if not user:
@@ -64,7 +64,7 @@ def get_user(
 def activate_user(
     user_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     user = db.get(User, user_id)
     if not user:
@@ -79,7 +79,7 @@ def activate_user(
 def deactivate_user(
     user_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     user = db.get(User, user_id)
     if not user:

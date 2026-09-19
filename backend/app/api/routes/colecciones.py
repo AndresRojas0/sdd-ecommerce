@@ -8,7 +8,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_optional_user, require_role
+from app.api.deps import get_optional_user, require_admin_role
 from app.db.base import get_db
 from app.models.coleccion import Coleccion
 from app.models.coleccion_producto import ColeccionProducto
@@ -102,7 +102,7 @@ def get_coleccion(
 def create_coleccion(
     body: ColeccionCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     col = Coleccion(
         nombre=body.nombre,
@@ -126,7 +126,7 @@ def update_coleccion(
     coleccion_id: uuid.UUID,
     body: ColeccionUpdate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     col = db.get(Coleccion, coleccion_id)
     if not col:
@@ -158,7 +158,7 @@ def update_coleccion(
 def delete_coleccion(
     coleccion_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     col = db.get(Coleccion, coleccion_id)
     if not col:
@@ -173,7 +173,7 @@ def add_producto_to_coleccion(
     coleccion_id: uuid.UUID,
     body: ColeccionProductoAdd,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     col = db.get(Coleccion, coleccion_id)
     if not col:
@@ -204,7 +204,7 @@ def reorder_productos(
     coleccion_id: uuid.UUID,
     body: ReorderBody,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     col = db.get(Coleccion, coleccion_id)
     if not col:
@@ -226,7 +226,7 @@ def remove_producto_from_coleccion(
     coleccion_id: uuid.UUID,
     product_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     cp = db.get(ColeccionProducto, (coleccion_id, product_id))
     if not cp:

@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_active_user, require_role
+from app.api.deps import require_admin_role
 from app.db.base import get_db
 from app.models.categoria import Categoria
 from app.models.producto_categoria import ProductoCategoria
@@ -96,7 +96,7 @@ def get_categoria(
 def create_categoria(
     body: CategoriaCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     nivel = 1
     if body.parent_id is not None:
@@ -129,7 +129,7 @@ def update_categoria(
     categoria_id: uuid.UUID,
     body: CategoriaUpdate,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     cat = db.get(Categoria, categoria_id)
     if not cat:
@@ -181,7 +181,7 @@ def update_categoria(
 def delete_categoria(
     categoria_id: uuid.UUID,
     db: Session = Depends(get_db),
-    current_user=Depends(require_role("administrador")),
+    current_user=Depends(require_admin_role("administrador")),
 ):
     cat = db.get(Categoria, categoria_id)
     if not cat:

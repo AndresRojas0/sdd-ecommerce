@@ -274,6 +274,16 @@ def auth_client_for(client: TestClient, user: User) -> dict:
     return auth_header(client, user.email)
 
 
+def admin_auth_header(client: TestClient, email: str, password: str = "Abcdef1!") -> dict:
+    """Login on the admin surface (ADR-005) and return cookie headers for admin endpoints."""
+    resp = client.post("/admin/auth/login", json={"email": email, "password": password})
+    assert resp.status_code == 200, resp.text
+    token = resp.cookies.get("admin_access_token")
+    if token:
+        return {"Cookie": f"admin_access_token={token}"}
+    return {}
+
+
 @pytest.fixture
 def unidad(db_session):
     um = db_session.query(UnidadMedida).filter_by(nombre="unidades").first()
@@ -294,7 +304,8 @@ def etiqueta(db_session):
 
 def create_product_fixture(client, categoria, unidad, vendedor, etiqueta=None, slug_suffix: str | None = None):
     sfx = slug_suffix or uuid.uuid4().hex[:6]
-    headers = auth_client_for(client, vendedor)
+    # POST /products is an admin-audience op (ADR-005): staff must login via /admin/auth/login.
+    headers = admin_auth_header(client, vendedor.email)
     payload = {
         "titulo": f"Producto {sfx}",
         "slug": f"producto-{sfx}",
