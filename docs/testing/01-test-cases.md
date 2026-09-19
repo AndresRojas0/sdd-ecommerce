@@ -60,6 +60,7 @@ de uso. La columna endpoint se completa al diseñar la API
 | TC-RN29-01 | Consolidar pedidos de compradores distintos | Rechazo (mismo comprador only) | A-OC-01 |
 | TC-RN29-02 | Consolidar N pendientes del mismo comprador → 1 OC | Totales sumados, todos `aceptado` | A-OC-01 |
 | TC-RN27-01 | Reasignación de pedido pendiente entre vendedores deja auditoría | Registro quién/cuándo/desde-quién | A-PED-07 |
+| TC-RN27-02 | Auditoría de reasignación con antes/después | `staff_audits` guarda `vendedor_id` previo y nuevo (consulta vía GET /admin/audit) | A-PED-07 + A-AUD-01 |
 | TC-RN26-01 | Pedido persiste subtotal, total, fecha y creador | Campos completos | S-PED-03 |
 
 ## Calificaciones
@@ -83,3 +84,11 @@ de uso. La columna endpoint se completa al diseñar la API
 | -- | --------- | -------- | -------- |
 | TC-ADR008-01 | Oferta con vigencia: efectivo en catálogo, snapshots en pedido (unit+lista), re-snapshot al editar pendiente | Precios exactos | PUT /products/{id}/discount (A-PROD-08) |
 | TC-ADR008-02 | Orden con_descuento: ofertas activas primero, mayor % primero | Orden verificado | S-CAT-01 |
+
+## Auditoría y admin (M5)
+
+| ID | Escenario | Esperado | Endpoint |
+| -- | --------- | -------- | -------- |
+| TC-AUD-01 | Transición de pedido auditada (aceptar/rechazar/facturar/en-logistica/entregar) | Fila en `staff_audits` con actor, acción y estados antes/después | A-PED-04..09 + A-AUD-01 |
+| TC-M5-01 | Edición de líneas de pedido solo en `pendiente` | 409 en `aceptado`; re-snapshot de precios (ADR-008) y recálculo de total; auditoría con líneas antes/después | A-PED-06 |
+| TC-M5-02 | Consulta de auditoría restringida a `administrador` | Vendedor (aud admin) → 403; comprador (aud tienda) → 401/403 | A-AUD-01 |

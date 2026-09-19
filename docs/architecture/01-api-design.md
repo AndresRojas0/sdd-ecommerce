@@ -6,13 +6,13 @@ superficies separadas por audiencia.
 ## Estado
 
 Diseño de endpoints **completado y reconciliado con el código**
-(2026-09-16): cada método+ruta de este doc corresponde a una ruta real
-del backend (~88 endpoints en 19 routers). Cobertura: todos los UC de
-los cinco actores tienen ≥1 endpoint (ver matriz §7); los ítems
-diferidos o fuera de alcance están listados en §8. Las únicas filas sin
-código son las declaradas **pendientes de implementación** (A-USR-03/05/06,
-A-COL-06, A-PED-06, A-STK-03, A-FAC-01/02, A-AUD-01). Los conflictos
-detectados entre documentos se listan en §9.
+(2026-09-16, actualizado 2026-09-19 con M5): cada método+ruta de este
+doc corresponde a una ruta real del backend (~97 endpoints en 21
+routers). Cobertura: todos los UC de los cinco actores tienen ≥1
+endpoint (ver matriz §7); los ítems diferidos o fuera de alcance están
+listados en §8. Todos los endpoints diseñados tienen implementación
+(verificada con suite de tests). Los conflictos detectados entre
+documentos se listan en §9.
 
 ## Principios ya decididos
 
@@ -160,10 +160,10 @@ ADR-006): no es un endpoint HTTP.
 | A-AUTH-05 | `POST /admin/auth/change-password-force` | cookie admin | Cambio forzado (must_change_password); revoca tokens de ambas audiencias | 401/422 | BOOT-03 |
 | A-USR-01 | `GET /admin/users` | staff | Lista/búsqueda/filtro (rol, `is_active`, q) | — | UC-AD01/02, UC-V03 |
 | A-USR-02 | `GET /admin/users/{user_id}` | staff | Detalle de perfil | 404 | UC-AD03, UC-V04 |
-| A-USR-03 | `PATCH /admin/users/{user_id}` | staff | Edición acotada de datos de perfil: NO rol, NO contraseña (alcance a confirmar en vendedor.md) — **pendiente de implementación** | 422 | UC-AD05, UC-V05, RF-32 |
-| A-USR-04 | `PATCH /admin/users/{user_id}/activate` · `PATCH /admin/users/{user_id}/deactivate` | `administrador` | Toggle `is_active` conservando datos (RN-17/19, ADR-007); implementado como dos rutas (`/activate`, `/deactivate`) en lugar de un toggle único | 404 | UC-AD04/23, AUTH-12, TC-AUTH12-01 |
-| A-USR-05 | `GET /admin/users/{user_id}/metricas` | staff | Métricas del usuario (pedidos, gastos) — **pendiente de implementación** | 404 | UC-AD05/24 |
-| A-USR-06 | `GET /admin/users/{user_id}/pedidos` | staff | Todos los pedidos del usuario — **pendiente de implementación** | — | UC-V04 |
+| A-USR-03 | `PATCH /admin/users/{user_id}` | staff | Edición acotada de datos de perfil (`display_name`, `avatar`); NO rol, NO contraseña — cualquier otro campo se rechaza con 422 (`extra=forbid`); audita `usuario.editar_perfil` | 404/422 | UC-AD05, UC-V05, RF-32 |
+| A-USR-04 | `PATCH /admin/users/{user_id}/activate` · `PATCH /admin/users/{user_id}/deactivate` | `administrador` | Toggle `is_active` conservando datos (RN-17/19, ADR-007); implementado como dos rutas (`/activate`, `/deactivate`) en lugar de un toggle único; audita `usuario.activar`/`usuario.desactivar` | 404 | UC-AD04/23, AUTH-12, TC-AUTH12-01 |
+| A-USR-05 | `GET /admin/users/{user_id}/metrics` | staff | Métricas del usuario: cantidad de pedidos, gasto total, fecha del último pedido | 404 | UC-AD05/24 |
+| A-USR-06 | `GET /admin/users/{user_id}/orders` | staff | Todos los pedidos del usuario (paginado, serializador admin compartido) | 404 | UC-V04 |
 
 ## 5. Superficie admin — catálogo
 
@@ -193,7 +193,7 @@ ADR-006): no es un endpoint HTTP.
 | A-COL-03 | `PUT /colecciones/{coleccion_id}` | staff | Edición | 404/422 | UC-AD31 |
 | A-COL-04 | `DELETE /colecciones/{coleccion_id}` | staff | Baja (CASCADE de vínculos) | 404 | UC-AD32 |
 | A-COL-05 | `POST /colecciones/{coleccion_id}/productos` · `DELETE /colecciones/{coleccion_id}/productos/{product_id}` | staff | Asigna/desasigna productos; `orden` opcional | 404 | UC-AD33 |
-| A-COL-06 | `PATCH /colecciones/{coleccion_id}/destacada` | staff | Toggle `destacada` — **pendiente de implementación** | 404 | UC-AD34 |
+| A-COL-06 | `PATCH /colecciones/{coleccion_id}/destacada` | staff | Toggle `destacada` (`{destacada: bool}`); audita `coleccion.destacada` | 404 | UC-AD34 |
 | A-COL-07 | `PATCH /colecciones/{coleccion_id}/productos/reorder` | staff | Reordena productos de la colección (`orden`) | 404 | UC-AD33 |
 
 ## 6. Superficie admin — pedidos, OC, stock, facturas, dashboard
@@ -207,8 +207,8 @@ ADR-006): no es un endpoint HTTP.
 | A-PED-03 | `POST /admin/orders` | staff | Crea pedido `pendiente` en nombre de un cliente | 422 | UC-V08 |
 | A-PED-04 | `POST /admin/orders/{pedido_id}/accept` | `vendedor`/`administrador` | `pendiente → aceptado`: genera movimiento `reserva` (RN-35) y crea/associa OC (RN-19/29); 409 si stock quedaría negativo | 409/422 transición ilegal | UC-V09/AD15, TC-RN18-01 |
 | A-PED-05 | `POST /admin/orders/{pedido_id}/reject` | `vendedor`/`administrador` | `pendiente → rechazado` (sin efecto stock) o `aceptado → rechazado` (genera `devolución`, RN-35); exige `motivo_rechazo` visible al comprador | 409/422 | UC-V10/AD16, TC-RN28-02 |
-| A-PED-06 | `PATCH /admin/orders/{pedido_id}/lineas` | staff | Corrige nombre de línea / normaliza unidad o nombre (solo `pendiente`) — **pendiente de implementación** | 409/422 | UC-AD17/18 |
-| A-PED-07 | `PATCH /admin/orders/{pedido_id}/reassign` | `administrador` | Reasigna `vendedor_id` solo en `pendiente` (RN-27); registra quién/cuándo/desde-quién | 409 | RN-27, ADR-007, TC-RN27-01 |
+| A-PED-06 | `PATCH /admin/orders/{pedido_id}/lines` | staff | Edición de líneas solo en `pendiente` (409 en otros estados, RN-28): cambiar `cantidad` (por `line_id`), quitar líneas, agregar líneas; re-snapshot de precios vigentes y recálculo de subtotal/total (ADR-008); audita `pedido.editar_lineas` con líneas antes/después | 409/422 | UC-AD17/18, TC-M5-01 |
+| A-PED-07 | `PATCH /admin/orders/{pedido_id}/reassign` | `administrador` | Reasigna `vendedor_id` solo en `pendiente` (RN-27); registra quién/cuándo/desde-quién en `staff_audits` (`pedido.reasignar`, antes/después del vendedor) | 409 | RN-27, ADR-007, TC-RN27-01/02 |
 | A-PED-08 | `POST /admin/orders/{pedido_id}/en-logistica` | `administrador` | `facturado → en_logistica` (sin efecto stock); actor "Logística" no existe como rol (§9.2) | 409 | UC-AD26 |
 | A-PED-09 | `POST /admin/orders/{pedido_id}/entregar` | `administrador` | `en_logistica → entregado` (terminal, sin efecto stock) | 409 | UC-AD27 |
 
@@ -222,12 +222,12 @@ ADR-006): no es un endpoint HTTP.
 | A-OC-04 | `POST /admin/orders/{pedido_id}/facturar` | `administrador` | Factura la OC **vía pedido**: pedido `aceptado` con OC asociada; valida que todos los pedidos de la OC estén `aceptado` y sin factura; genera `facturas` 1:1 (`F-YYYY-NNNN`, inmutable) y todos sus pedidos pasan a `facturado` (movimiento `confirmación`, RN-35) | 409 ya facturada / estado; 422 sin OC | UC-AD25, RN-36 |
 | A-STK-01 | `GET /admin/stock` | staff | Lista `stock` (disponible/reservada) | — | lectura staff |
 | A-STK-02 | `GET /admin/stock/{product_id}` | staff | Detalle de stock de un producto | 404 | lectura staff |
-| A-STK-03 | `GET /admin/stock/movimientos` | staff | Historial `movimientos_stock` (solo lectura; `ajuste_manual` fuera de MVP) — **pendiente de implementación** | — | RN-35 |
+| A-STK-03 | `GET /admin/stock/movements` | staff | Historial `movimientos_stock` paginado, filtros `product_id` y `tipo` (reserva/confirmacion/devolucion/ajuste); solo lectura; declarada antes de `/{product_id}` para no ser sombreada | 422 tipo inválido | RN-35 |
 | A-STK-04 | `PUT /admin/stock/{product_id}` | `administrador` | Ajuste manual de `cantidad_disponible`/`cantidad_reservada`; genera movimiento `ajuste` (RN-35). Los docs lo tenían "fuera de MVP"; el código lo implementa y se documenta | 404/422 | RN-35 |
-| A-FAC-01 | `GET /admin/facturas` | staff | Lista `facturas` — **pendiente de implementación** | — | RN-36 |
-| A-FAC-02 | `GET /admin/facturas/{id}` | staff | Detalle (nunca DELETE) — **pendiente de implementación** | 404 | RN-36 |
+| A-FAC-01 | `GET /admin/invoices` | staff | Lista paginada de `facturas` (filtro opcional `orden_compra_id`) | — | RN-36 |
+| A-FAC-02 | `GET /admin/invoices/{factura_id}` | staff | Detalle (nunca DELETE; incluye OC y pedidos vinculados) | 404 | RN-36 |
 | A-DASH-01 | `GET /admin/dashboard/totales-hoy` | staff | Totales del día (RN-37): widget, no columna kanban | — | UC-AD28 |
-| A-AUD-01 | `GET /admin/auditoria` | `administrador` | Lectura de `auditoria_staff` (filtro actor/entidad/fechas); append-only, sin borrado — **pendiente de implementación** | 422 filtros | 02-security.md |
+| A-AUD-01 | `GET /admin/audit` | `administrador` | Lectura de `staff_audits` (tabla `staff_audits` append-only: filtros `actor_id`, `entidad`, `from`/`to`; paginado, más reciente primero); sin endpoints de escritura/borrado | 422 filtros | 02-security.md |
 
 Rutas de infraestructura (sin ID de diseño, fuera del catálogo funcional):
 `GET /health` (readiness: estado + conectividad de DB + config) y
