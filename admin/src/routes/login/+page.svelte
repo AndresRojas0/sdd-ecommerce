@@ -89,11 +89,7 @@
 			const detail = err.data?.detail;
 			if (err.status === 401) {
 				changeError =
-					'No se pudo cambiar la contraseña sin sesión válida. El backend bloquea login con must_change_password sin emitir token. Solución dev: ejecute en el contenedor api: python -c "from app.db.base import SessionLocal; from app.models.user import User; from sqlalchemy import select; from app.core.security import hash_password; db=SessionLocal(); u=db.scalar(select(User).where(User.email==\'' +
-					email +
-					'\')); u.password_hash=hash_password(\'' +
-					newPassword +
-					'\'); u.must_change_password=False; db.commit()" y luego reintente login.';
+					'No se pudo validar tu sesión para cambiar la contraseña. Reintentá el login; si persiste, verificá que el proxy de Vite (VITE_API_PROXY_TARGET) apunte al backend correcto.';
 			} else if (detail) {
 				changeError = typeof detail === 'string' ? detail : JSON.stringify(detail);
 			} else {

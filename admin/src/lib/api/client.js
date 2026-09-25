@@ -1,7 +1,11 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// VITE_API_URL vacío ("") = URLs relativas: las llamadas pasan por el proxy
+// de Vite (same-origin) y las cookies de sesión son first-party. Con `??`
+// un "" se respeta en vez de caer al default (|| lo trataría como falsy).
+const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
 function buildUrl(path, params) {
-	const url = new URL(`${API_URL}${path}`);
+	// base = origin actual: permite API_URL relativo (proxy de dev)
+	const url = new URL(`${API_URL}${path}`, window.location.origin);
 	if (params) {
 		Object.entries(params).forEach(([k, v]) => {
 			if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
