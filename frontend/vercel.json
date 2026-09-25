@@ -1,26 +1,92 @@
 {
 	"rewrites": [
-		{ "source": "/auth/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/auth/:path*" },
-		{ "source": "/auth", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/auth" },
-		{ "source": "/users/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/users/:path*" },
-		{ "source": "/users", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/users" },
-		{ "source": "/products/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/products/:path*" },
-		{ "source": "/products", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/products" },
-		{ "source": "/favorites/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/favorites/:path*" },
-		{ "source": "/favorites", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/favorites" },
-		{ "source": "/carts/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/carts/:path*" },
-		{ "source": "/carts", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/carts" },
-		{ "source": "/orders/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/orders/:path*" },
-		{ "source": "/orders", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/orders" },
-		{ "source": "/categorias/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/categorias/:path*" },
-		{ "source": "/categorias", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/categorias" },
-		{ "source": "/colecciones/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/colecciones/:path*" },
-		{ "source": "/colecciones", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/colecciones" },
-		{ "source": "/etiquetas/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/etiquetas/:path*" },
-		{ "source": "/etiquetas", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/etiquetas" },
-		{ "source": "/unidades-medida/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/unidades-medida/:path*" },
-		{ "source": "/unidades-medida", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/unidades-medida" },
-		{ "source": "/health", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/health" },
-		{ "source": "/healthz", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/healthz" }
+		{
+			"source": "/auth",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/auth"
+		},
+		{
+			"source": "/users",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/users"
+		},
+		{
+			"source": "/products",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/products"
+		},
+		{
+			"source": "/favorites",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/favorites"
+		},
+		{
+			"source": "/carts",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/carts"
+		},
+		{
+			"source": "/orders",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/orders"
+		},
+		{
+			"source": "/categorias",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/categorias"
+		},
+		{
+			"source": "/colecciones",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/colecciones"
+		},
+		{
+			"source": "/etiquetas",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/etiquetas"
+		},
+		{
+			"source": "/unidades-medida",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/unidades-medida"
+		},
+		{
+			"source": "/health",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/health"
+		},
+		{
+			"source": "/healthz",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/healthz"
+		},
+		{
+			"source": "/auth/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/auth/:path*"
+		},
+		{
+			"source": "/users/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/users/:path*"
+		},
+		{
+			"source": "/products/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/products/:path*"
+		},
+		{
+			"source": "/favorites/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/favorites/:path*"
+		},
+		{
+			"source": "/carts/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/carts/:path*"
+		},
+		{
+			"source": "/orders/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/orders/:path*"
+		},
+		{
+			"source": "/categorias/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/categorias/:path*"
+		},
+		{
+			"source": "/colecciones/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/colecciones/:path*"
+		},
+		{
+			"source": "/etiquetas/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/etiquetas/:path*"
+		},
+		{
+			"source": "/unidades-medida/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/unidades-medida/:path*"
+		}
 	]
 }

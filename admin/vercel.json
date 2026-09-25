@@ -1,20 +1,68 @@
 {
 	"rewrites": [
-		{ "source": "/admin/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/admin/:path*" },
-		{ "source": "/admin", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/admin" },
-		{ "source": "/products/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/products/:path*" },
-		{ "source": "/products", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/products" },
-		{ "source": "/orders/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/orders/:path*" },
-		{ "source": "/orders", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/orders" },
-		{ "source": "/users/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/users/:path*" },
-		{ "source": "/users", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/users" },
-		{ "source": "/etiquetas/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/etiquetas/:path*" },
-		{ "source": "/etiquetas", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/etiquetas" },
-		{ "source": "/unidades-medida/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/unidades-medida/:path*" },
-		{ "source": "/unidades-medida", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/unidades-medida" },
-		{ "source": "/api/categorias/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/categorias/:path*" },
-		{ "source": "/api/categorias", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/categorias" },
-		{ "source": "/api/colecciones/:path*", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/colecciones/:path*" },
-		{ "source": "/api/colecciones", "destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/colecciones" }
+		{
+			"source": "/admin",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/admin"
+		},
+		{
+			"source": "/products",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/products"
+		},
+		{
+			"source": "/orders",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/orders"
+		},
+		{
+			"source": "/users",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/users"
+		},
+		{
+			"source": "/etiquetas",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/etiquetas"
+		},
+		{
+			"source": "/unidades-medida",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/unidades-medida"
+		},
+		{
+			"source": "/api/categorias",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/categorias"
+		},
+		{
+			"source": "/api/colecciones",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/colecciones"
+		},
+		{
+			"source": "/admin/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/admin/:path*"
+		},
+		{
+			"source": "/products/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/products/:path*"
+		},
+		{
+			"source": "/orders/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/orders/:path*"
+		},
+		{
+			"source": "/users/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/users/:path*"
+		},
+		{
+			"source": "/etiquetas/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/etiquetas/:path*"
+		},
+		{
+			"source": "/unidades-medida/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/unidades-medida/:path*"
+		},
+		{
+			"source": "/api/categorias/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/categorias/:path*"
+		},
+		{
+			"source": "/api/colecciones/:path*",
+			"destination": "https://sdd-ecommerce-1310dbf4.fastapicloud.dev/colecciones/:path*"
+		}
 	]
 }
