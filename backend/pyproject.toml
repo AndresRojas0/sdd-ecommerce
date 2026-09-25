@@ -1,0 +1,39 @@
+[project]
+name = "mi-fastapi-backend"
+version = "0.1.0"
+description = "Backend para FastAPI Cloud"
+readme = "README.md"
+# 1. FORZAMOS UNA VERSIÓN ESTABLE DE PYTHON PARA LA NUBE
+requires-python = ">=3.12,<3.14" 
+dependencies = [
+    "fastapi[standard]>=0.115,<1.0",
+    "uvicorn[standard]>=0.30",
+    "SQLAlchemy>=2.0",
+    "psycopg[binary]>=3.2",
+    "pydantic-settings>=2.4",
+    "pydantic[email]>=2.8",
+    "bcrypt>=4.1",
+    "PyJWT>=2.8",
+    "python-multipart>=0.0.9",
+    "alembic>=1.13",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+# 2. CORREGIMOS EL NOMBRE A 'entrypoint'
+[tool.fastapi]
+entrypoint = "app.main:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# El backend es una aplicación, no una librería: solo `app` es paquete.
+# Evita que la auto-descubrimiento de setuptools tropiece con tests/ y alembic/.
+packages = ["app"]
