@@ -209,7 +209,8 @@ def client(db_session):
         yield db_session
 
     fastapi_app.dependency_overrides[get_db] = _override_get_db
-    with TestClient(fastapi_app) as c:
+    # base_url https: httpx only stores Secure cookies over https (cookies are SameSite=None;Secure).
+    with TestClient(fastapi_app, base_url="https://testserver") as c:
         yield c
     fastapi_app.dependency_overrides.clear()
 

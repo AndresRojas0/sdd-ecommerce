@@ -47,3 +47,4 @@ del frontend. El stack tecnológico concreto se definirá más adelante.
 - Positivas: credenciales inaccesibles desde JS; revocación real vía refresh rotativo; despliegue y evolución independientes de tienda y admin.
 - Negativas: requiere manejar rotación/detección de reuso correctamente; dos sistemas de sesión que mantener; CSRF exige SameSite correcto y validación adicional en mutaciones sensibles.
 - ~~Pendiente: definir stack concreto~~ → Resuelto en ADR-004 (FastAPI / PostgreSQL / SvelteKit).
+- Revisión (2026-09-25): `SameSite=Lax` → `SameSite=None` + `Secure`. Las SPAs viven en otro origen que la API (dev `localhost:5173/:3001 → :8000`, prod dominios separados): Lax retiene cookies en POSTs cross-site y rompe todo flujo autenticado desde el navegador (detectado en el force-change del panel contra FastAPI Cloud).

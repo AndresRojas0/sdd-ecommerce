@@ -42,13 +42,13 @@ def create_visit(
         visitor_cookie = x_visitor_id or visitor_id
         if not visitor_cookie:
             visitor_cookie = str(uuid.uuid4())
-            # Set cookie for future dedup (Secure False for dev)
+            # Set cookie for future dedup (SameSite=None+Secure: cross-origin storefront)
             response.set_cookie(
                 key="visitor_id",
                 value=visitor_cookie,
                 httponly=False,
-                secure=False,
-                samesite="lax",
+                secure=True,
+                samesite="none",
                 path="/",
                 max_age=365 * 24 * 3600,
             )
@@ -59,8 +59,8 @@ def create_visit(
                     key="visitor_id",
                     value=visitor_cookie,
                     httponly=False,
-                    secure=False,
-                    samesite="lax",
+                    secure=True,
+                    samesite="none",
                     path="/",
                     max_age=365 * 24 * 3600,
                 )

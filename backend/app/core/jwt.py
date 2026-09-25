@@ -107,9 +107,14 @@ def set_auth_cookies(
     refresh_token: str,
     is_admin: bool = False,
 ) -> None:
-    """Issue the audience's httponly cookie pair (SameSite=Lax per ADR-003).
+    """Issue the audience's httponly cookie pair.
 
-    Secure=False for local dev/test; in production should be True (HTTPS).
+    SameSite=None + Secure: the SPAs (store, admin) always live on a
+    different origin than the API (localhost:5173/3001 -> localhost:8000,
+    or deployed domains -> FastAPI Cloud), i.e. cross-site fetches. Lax
+    would withhold cookies on cross-site POSTs (seen live: force-change
+    got 401 from the panel). localhost is a trustworthy context, so
+    Secure cookies are accepted in dev too (revises ADR-003's "Lax").
     """
     if is_admin:
         access_name, refresh_name, refresh_path = (
@@ -128,8 +133,8 @@ def set_auth_cookies(
         key=access_name,
         value=access_token,
         httponly=True,
-        secure=False,
-        samesite="lax",
+        secure=True,
+        samesite="none",
         path="/",
         max_age=settings.access_token_expire_minutes * 60,
     )
@@ -137,8 +142,8 @@ def set_auth_cookies(
         key=refresh_name,
         value=refresh_token,
         httponly=True,
-        secure=False,
-        samesite="lax",
+        secure=True,
+        samesite="none",
         path=refresh_path,
         max_age=settings.refresh_token_expire_days * 24 * 3600,
     )

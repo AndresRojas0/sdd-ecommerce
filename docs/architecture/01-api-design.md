@@ -34,7 +34,7 @@ documentos se listan en §9.
 | --- | --- | --- |
 | Access token | JWT 15 min, `aud=store`, claims `sub`, `role`, `iat`, `exp` | JWT 15 min, `aud=admin`, mismos claims |
 | Refresh token | 30 días, rotativo, hash SHA-256 en `refresh_tokens` con `family_id` | Ídem, pero `aud=admin` |
-| Cookies | `HttpOnly`, `Secure`, `SameSite=Lax`; refresh con `Path=/auth/refresh` | Nombres de cookie propios; refresh con `Path=/admin/auth/refresh` |
+| Cookies | `HttpOnly`, `Secure`, `SameSite=None` (revisión 2026-09-25: SPAs cross-origin); refresh con `Path=/auth/refresh` | Nombres de cookie propios; refresh con `Path=/admin/auth/refresh` |
 | Roles | anónimo, `comprador` | `vendedor`, `administrador` (y `comprador` solo para ser denegado) |
 
 Nota de implementación: las rutas del backend no llevan prefijo `/api`
