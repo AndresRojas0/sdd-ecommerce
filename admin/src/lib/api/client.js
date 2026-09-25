@@ -3,7 +3,25 @@
 // un "" se respeta en vez de caer al default (|| lo trataría como falsy).
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
 
+// En Vercel, /categorias y /colecciones colisionan con páginas de la SPA
+// (filesystem gana sobre rewrites) → viajan bajo /api/* (ver admin/vercel.json).
+// Se activa SOLO con VITE_VERCEL_REWRITES=1 (env del proyecto en Vercel);
+// dev local y compose siguen llamando las rutas directas.
+const PATH_ALIASES = { '/categorias': '/api/categorias', '/colecciones': '/api/colecciones' };
+const ALIASES_ACTIVE = import.meta.env.VITE_VERCEL_REWRITES === '1';
+
+function resolvePath(path) {
+	if (!ALIASES_ACTIVE) return path;
+	for (const [from, to] of Object.entries(PATH_ALIASES)) {
+		if (path === from || path.startsWith(from + '/') || path.startsWith(from + '?')) {
+			return to + path.slice(from.length);
+		}
+	}
+	return path;
+}
+
 function buildUrl(path, params) {
+	path = resolvePath(path);
 	// base = origin actual: permite API_URL relativo (proxy de dev)
 	const url = new URL(`${API_URL}${path}`, window.location.origin);
 	if (params) {

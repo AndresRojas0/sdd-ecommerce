@@ -1,9 +1,15 @@
-import adapter from '@sveltejs/adapter-node';
+import adapterNode from '@sveltejs/adapter-node';
+import adapterVercel from '@sveltejs/adapter-vercel';
 
 /** @type {import('@sveltejs/kit').Config} */
+
+// Vercel exporta VERCEL=1 durante el build; compose/local usa adapter-node
+// (el Dockerfile corre `node build`).
+const adapter = process.env.VERCEL ? adapterVercel() : adapterNode();
+
 const config = {
 	kit: {
-		adapter: adapter(),
+		adapter,
 		alias: {
 			$lib: './src/lib'
 		}
