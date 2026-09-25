@@ -233,12 +233,17 @@ def login(
 
     _set_auth_cookies(response, access_token, raw_refresh)
 
-    # Must change password (BOOT-03)
+    # Must change password (BOOT-03): return (not raise) so the cookies set
+    # above survive — a raised HTTPException would build a fresh response
+    # without them, leaving the bootstrap admin unable to authenticate.
     if user.must_change_password:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"code": "MUST_CHANGE_PASSWORD", "message": "Debe cambiar su contraseña antes de continuar."},
-        )
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {
+            "detail": {
+                "code": "MUST_CHANGE_PASSWORD",
+                "message": "Debe cambiar su contraseña antes de continuar.",
+            }
+        }
 
     return {"user": UserResponse.model_validate(user), "message": "Login exitoso"}
 

@@ -92,11 +92,16 @@ def admin_login(
     set_auth_cookies(response, access_token=access_token, refresh_token=raw_refresh, is_admin=True)
 
     # Must change password (BOOT-03): same 403 contract, but WITH a session.
+    # Returned (not raised) so the cookies set above are not discarded by the
+    # exception handler.
     if user.must_change_password:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"code": "MUST_CHANGE_PASSWORD", "message": "Debe cambiar su contraseña antes de continuar."},
-        )
+        response.status_code = status.HTTP_403_FORBIDDEN
+        return {
+            "detail": {
+                "code": "MUST_CHANGE_PASSWORD",
+                "message": "Debe cambiar su contraseña antes de continuar.",
+            }
+        }
 
     return {"user": UserResponse.model_validate(user), "message": "Login exitoso"}
 
