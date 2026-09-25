@@ -211,14 +211,9 @@ def login(
                 detail={"code": "ACCOUNT_DEACTIVATED", "message": "Cuenta desactivada. Use reactivate=true para reactivar."},
             )
 
-    # Must change password (BOOT-03)
-    if user.must_change_password:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"code": "MUST_CHANGE_PASSWORD", "message": "Debe cambiar su contraseña antes de continuar."},
-        )
-
-    # Issue tokens
+    # Issue tokens BEFORE the must_change check: the 403 below carries the
+    # session cookies so the client can reach /auth/change-password-force
+    # (which runs on get_current_user, without the active/forced gating).
     access_token = create_access_token(user.id, user.role)
     raw_refresh = create_refresh_token_raw()
     family_id = uuid.uuid4()
@@ -237,6 +232,14 @@ def login(
     db.commit()
 
     _set_auth_cookies(response, access_token, raw_refresh)
+
+    # Must change password (BOOT-03)
+    if user.must_change_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "MUST_CHANGE_PASSWORD", "message": "Debe cambiar su contraseña antes de continuar."},
+        )
+
     return {"user": UserResponse.model_validate(user), "message": "Login exitoso"}
 
 

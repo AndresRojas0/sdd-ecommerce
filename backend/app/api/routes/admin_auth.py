@@ -69,14 +69,9 @@ def admin_login(
     if user.role not in _ADMIN_ROLES:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No autorizado para este recurso")
 
-    # Must change password (BOOT-03): mirror the store login contract.
-    if user.must_change_password:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={"code": "MUST_CHANGE_PASSWORD", "message": "Debe cambiar su contraseña antes de continuar."},
-        )
-
-    # Issue admin-audience tokens
+    # Issue admin-audience tokens BEFORE the must_change check: the 403 below
+    # carries the admin session so the client can reach
+    # /admin/auth/change-password-force (BOOT-03 first-login flow).
     access_token = create_access_token(user.id, user.role, is_admin=True)
     raw_refresh = create_refresh_token_raw()
     family_id = uuid.uuid4()
@@ -95,6 +90,14 @@ def admin_login(
     db.commit()
 
     set_auth_cookies(response, access_token=access_token, refresh_token=raw_refresh, is_admin=True)
+
+    # Must change password (BOOT-03): same 403 contract, but WITH a session.
+    if user.must_change_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "MUST_CHANGE_PASSWORD", "message": "Debe cambiar su contraseña antes de continuar."},
+        )
+
     return {"user": UserResponse.model_validate(user), "message": "Login exitoso"}
 
 
