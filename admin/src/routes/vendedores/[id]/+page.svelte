@@ -62,6 +62,7 @@
 				<div><span class="text-muted-foreground">Último login:</span> {user.last_login_at ? new Date(user.last_login_at).toLocaleString() : '—'}</div>
 			</div>
 			<p class="text-xs text-muted-foreground">Al desactivar, sus órdenes confirmadas quedan congeladas y sus pedidos pendientes son reasignables (RN-27, ADR-007).</p>
+			<p class="text-xs"><a href="/usuarios/{user.id}" class="underline">Gestión de cuenta (rol, restablecer contraseña) →</a></p>
 		</Card>
 		<Card class="p-4">
 			<h3 class="font-oswald font-bold text-sm mb-2">Pedidos asignados ({pedidosTotal}) — UC-AD24</h3>

@@ -164,6 +164,9 @@ ADR-006): no es un endpoint HTTP.
 | A-USR-04 | `PATCH /admin/users/{user_id}/activate` · `PATCH /admin/users/{user_id}/deactivate` | `administrador` | Toggle `is_active` conservando datos (RN-17/19, ADR-007); implementado como dos rutas (`/activate`, `/deactivate`) en lugar de un toggle único; audita `usuario.activar`/`usuario.desactivar` | 404 | UC-AD04/23, AUTH-12, TC-AUTH12-01 |
 | A-USR-05 | `GET /admin/users/{user_id}/metrics` | staff | Métricas del usuario: cantidad de pedidos, gasto total, fecha del último pedido | 404 | UC-AD05/24 |
 | A-USR-06 | `GET /admin/users/{user_id}/orders` | staff | Todos los pedidos del usuario (paginado, serializador admin compartido) | 404 | UC-V04 |
+| A-USR-07 | `POST /admin/users` | `administrador` | Alta de usuario `{email, display_name, role, temp_password?}` con rol acotado a `comprador/vendedor` (422 con otro valor: el panel NO crea administradores, bootstrap por env es el único camino); 422 email duplicado (RN-14) y 422 temp que viola política (AUTH-04); si falta temp se genera (`Tp-…!7A`, política-compliant); el usuario nace `is_active=true` + `must_change_password=true`; la temp viaja SOLO en esta respuesta (`aviso: "Mostrar una sola vez"`, nunca se audita); audita `usuario.crear` | 422 | UC-AD01, RN-14, AUTH-04, ADR-006, BOOT-03 |
+| A-USR-08 | `POST /admin/users/{user_id}/password-reset` | `administrador` | Restablece a contraseña temporal (`{temp_password?}` igual que A-USR-07), activa `must_change_password` y revoca TODAS las filas de refresh del usuario (ambas audiencias, como A-AUTH-05); opera sobre cualquier usuario incluidos otros administradores; respuesta `{temp_password, aviso}` | 404/422 | UC-AD01, AUTH-04, ADR-005 |
+| A-USR-09 | `PATCH /admin/users/{user_id}/role` | `administrador` | Cambio de rol acotado a `comprador/vendedor` (422 `administrador`); guard 422 si el objetivo es el propio admin (evitar auto-bloqueo); audita `usuario.cambiar_rol` con antes/después del rol | 404/422 | UC-AD01, RN-27, A-AUD-01 |
 
 ## 5. Superficie admin — catálogo
 
@@ -258,7 +261,7 @@ Sin transiciones inversas salvo `aceptado → rechazado`.
 | Cuenta | C01..C10 | S-AUTH-01..07, S-CUENTA-01..06; C04 diferido (§8.2); C07 cubierto (S-CUENTA-05, §9.4) |
 | Comprador | B01..B10 | S-FAV-01..03, S-CART-01..05, S-PED-01..06, S-CAL-01..04 |
 | Vendedor | V01..V11 | A-PROD-03/04, A-ETIQ-01..03, A-USR-01..06, A-PED-01/03/04/05, A-PED-02 (V11 lectura) — superficie `/api/admin` asumida, a confirmar (§8.6) |
-| Administrador | AD01..AD34 | A-USR-*, A-PROD-*, A-CAT-*, A-COL-*, A-PED-*, A-OC-*, A-STK-*, A-FAC-*, A-DASH-01, A-AUD-01 |
+| Administrador | AD01..AD34 | A-USR-01..09 (ciclo de vida completo: alta/temporal A-USR-07, reset A-USR-08, rol A-USR-09), A-PROD-*, A-CAT-*, A-COL-*, A-PED-*, A-OC-*, A-STK-*, A-FAC-*, A-DASH-01, A-AUD-01 |
 
 ### 7.2 Resumen RF/AUTH
 

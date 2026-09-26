@@ -7,6 +7,7 @@
 	import Card from '$lib/components/ui/card.svelte';
 	import Alert from '$lib/components/ui/alert.svelte';
 	import Skeleton from '$lib/components/ui/skeleton.svelte';
+	import Dialog from '$lib/components/ui/dialog.svelte';
 
 	let users = $state([]);
 	let total = $state(0);
@@ -16,6 +17,17 @@
 	let limit = 20;
 	let offset = $state(0);
 	let debounceTimer;
+
+	// A-USR-07: alta de usuario desde el panel
+	let showCreate = $state(false);
+	let form = $state({ email: '', display_name: '', role: 'vendedor', temp_password: '' });
+	let creating = $state(false);
+	let createError = $state(null);
+
+	// Contraseña temporal: se muestra UNA sola vez tras crear
+	let showTemp = $state(false);
+	let tempPassword = $state('');
+	let tempCopied = $state(false);
 
 	let filtered = $derived(
 		search.trim()
@@ -62,6 +74,44 @@
 		}
 	}
 
+	function openCreate() {
+		form = { email: '', display_name: '', role: 'vendedor', temp_password: '' };
+		createError = null;
+		showCreate = true;
+	}
+
+	async function submitCreate() {
+		creating = true;
+		createError = null;
+		try {
+			const body = {
+				email: form.email.trim(),
+				display_name: form.display_name.trim(),
+				role: form.role
+			};
+			if (form.temp_password.trim()) body.temp_password = form.temp_password.trim();
+			const data = await api.post('/admin/users', body);
+			showCreate = false;
+			tempPassword = data.temp_password;
+			tempCopied = false;
+			showTemp = true;
+			await fetchUsers();
+		} catch (e) {
+			createError = e.message;
+		} finally {
+			creating = false;
+		}
+	}
+
+	async function copyTempPassword() {
+		try {
+			await navigator.clipboard.writeText(tempPassword);
+			tempCopied = true;
+		} catch {
+			// Clipboard puede fallar sin HTTPS/permiso: la contraseña sigue visible en el modal
+		}
+	}
+
 	function nextPage() {
 		if (offset + limit < total) {
 			offset += limit;
@@ -86,10 +136,11 @@
 	<div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
 		<div>
 			<h1 class="font-oswald font-bold text-xl">Usuarios</h1>
-			<p class="text-xs text-muted-foreground">UC-AD01..AD05 · Listar, buscar, activar/desactivar, métricas</p>
+			<p class="text-xs text-muted-foreground">UC-AD01..AD05 · Listar, buscar, activar/desactivar, métricas · Alta A-USR-07</p>
 		</div>
 		<div class="flex gap-2">
 			<Button variant="outline" size="sm" onclick={fetchUsers}>Recargar</Button>
+			<Button size="sm" onclick={openCreate}>Nuevo usuario</Button>
 		</div>
 	</div>
 
@@ -154,3 +205,62 @@
 		</Card>
 	{/if}
 </div>
+
+<!-- A-USR-07: alta de usuario (solo comprador/vendedor; no se crean administradores) -->
+<Dialog bind:open={showCreate} title="Nuevo usuario">
+	<form
+		class="flex flex-col gap-3"
+		onsubmit={(e) => {
+			e.preventDefault();
+			submitCreate();
+		}}
+	>
+		{#if createError}
+			<Alert variant="destructive"><p class="text-sm">{createError}</p></Alert>
+		{/if}
+		<label class="flex flex-col gap-1 text-sm">
+			Email
+			<Input type="email" required bind:value={form.email} placeholder="usuario@dominio.com" />
+		</label>
+		<label class="flex flex-col gap-1 text-sm">
+			Nombre
+			<Input required bind:value={form.display_name} placeholder="Nombre visible" maxlength="100" />
+		</label>
+		<label class="flex flex-col gap-1 text-sm">
+			Rol
+			<select bind:value={form.role} class="border bg-background px-3 py-2 text-sm h-10">
+				<option value="comprador">comprador</option>
+				<option value="vendedor">vendedor</option>
+			</select>
+			<span class="text-xs text-muted-foreground">El panel no crea administradores: el bootstrap por env es el único camino.</span>
+		</label>
+		<label class="flex flex-col gap-1 text-sm">
+			Contraseña temporal (opcional)
+			<Input type="text" bind:value={form.temp_password} placeholder="vacío = generar automática" />
+			<span class="text-xs text-muted-foreground">Mínimo 8 caracteres, una mayúscula, un número y un caracter especial.</span>
+		</label>
+		<div class="flex justify-end gap-2 mt-2">
+			<Button type="button" variant="outline" size="sm" onclick={() => (showCreate = false)}>Cancelar</Button>
+			<Button type="submit" size="sm" disabled={creating}>{creating ? 'Creando…' : 'Crear usuario'}</Button>
+		</div>
+	</form>
+</Dialog>
+
+<!-- Contraseña temporal: única vez (A-USR-07/08) -->
+<Dialog bind:open={showTemp} title="Contraseña temporal generada">
+	<div class="flex flex-col gap-3">
+		<Alert variant="destructive">
+			<p class="text-sm font-semibold">No se mostrará nuevamente; el usuario deberá cambiarla en su primer login.</p>
+		</Alert>
+		<div class="flex items-center gap-2">
+			<code class="flex-1 border bg-muted/40 px-3 py-2 font-mono text-sm break-all select-all">{tempPassword}</code>
+			<Button variant="outline" size="sm" onclick={copyTempPassword}>{tempCopied ? '¡Copiada!' : 'Copiar'}</Button>
+		</div>
+		<p class="text-xs text-muted-foreground">
+			Entregue esta contraseña al usuario por un canal seguro. En su primer login el sistema le exigirá cambiarla.
+		</p>
+		<div class="flex justify-end">
+			<Button size="sm" onclick={() => (showTemp = false)}>Entendido</Button>
+		</div>
+	</div>
+</Dialog>

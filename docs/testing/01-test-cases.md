@@ -92,3 +92,11 @@ de uso. La columna endpoint se completa al diseñar la API
 | TC-AUD-01 | Transición de pedido auditada (aceptar/rechazar/facturar/en-logistica/entregar) | Fila en `staff_audits` con actor, acción y estados antes/después | A-PED-04..09 + A-AUD-01 |
 | TC-M5-01 | Edición de líneas de pedido solo en `pendiente` | 409 en `aceptado`; re-snapshot de precios (ADR-008) y recálculo de total; auditoría con líneas antes/después | A-PED-06 |
 | TC-M5-02 | Consulta de auditoría restringida a `administrador` | Vendedor (aud admin) → 403; comprador (aud tienda) → 401/403 | A-AUD-01 |
+
+## Ciclo de vida de usuarios (panel)
+
+| ID | Escenario | Esperado | Endpoint |
+| -- | --------- | -------- | -------- |
+| TC-USR-01 | Crear vendedor con temporal (auto o provista) + primer login forzado | 201 con `temp_password`/`aviso` y `must_change_password=true`; login con temporal → 403 `MUST_CHANGE_PASSWORD` con sesión; change-password-force → 200; re-login OK con rol asignado; 422 email duplicado (RN-14), temp débil (AUTH-04) y `role=administrador` | A-USR-07 |
+| TC-USR-02 | Reset de contraseña: contraseña vieja deja de servir y sesiones mueren | Respuesta `{temp_password, aviso}`; filas de refresh de ambas audiencias `revoked=true`; login viejo → 401; login temporal → 403 `MUST_CHANGE_PASSWORD`; opera también sobre otros administradores | A-USR-08 |
+| TC-USR-03 | Cambio de rol comprador→vendedor auditado | 200 + fila en `staff_audits` (`usuario.cambiar_rol`, antes/después del rol); cambio del propio rol del admin → 422; `role=administrador` → 422 | A-USR-09 |
