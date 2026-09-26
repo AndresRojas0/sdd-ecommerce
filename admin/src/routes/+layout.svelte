@@ -35,8 +35,12 @@
 			return;
 		}
 		const me = await fetchMe();
-		if (!me) {
+		// Sin sesión O con cambio de contraseña pendiente (BOOT-03): el panel
+		// no se libera hasta completar el cambio forzado en /login.
+		if (!me || me.must_change_password) {
 			await goto('/login');
+			checkingAuth = false;
+			return;
 		}
 		checkingAuth = false;
 	});

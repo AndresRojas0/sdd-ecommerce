@@ -153,7 +153,7 @@
 					<Alert><p class="text-xs">{changeSuccess}</p></Alert>
 				{/if}
 				<form onsubmit={handleChangePassword} class="flex flex-col gap-2 mt-2">
-					<Input bind:value={currentPassword} type="password" placeholder="Contraseña actual" required />
+					<Input bind:value={currentPassword} type="password" placeholder="Contraseña temporal (la del login)" required readonly title="Es la contraseña temporal con la que acabás de ingresar" />
 					<Input bind:value={newPassword} type="password" placeholder="Nueva contraseña (min 8, mayúscula, número, símbolo)" required />
 					<Button type="submit" variant="secondary" size="sm">Cambiar contraseña</Button>
 				</form>
