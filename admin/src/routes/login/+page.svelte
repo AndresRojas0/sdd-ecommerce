@@ -87,9 +87,13 @@
 			password = newPassword;
 		} catch (err) {
 			const detail = err.data?.detail;
-			if (err.status === 401) {
+			if (err.status === 401 && typeof detail === 'string' && detail) {
+				// El backend distingue sesión inválida de contraseña actual incorrecta:
+				// mostrar el motivo real (un typo en la temp no es un problema de sesión).
+				changeError = detail;
+			} else if (err.status === 401) {
 				changeError =
-					'No se pudo validar tu sesión para cambiar la contraseña. Reintentá el login; si persiste, verificá que el proxy de Vite (VITE_API_PROXY_TARGET) apunte al backend correcto.';
+					'No se pudo validar tu sesión para cambiar la contraseña. Reintentá el login; si persiste, recargá la página e ingresá nuevamente.';
 			} else if (detail) {
 				changeError = typeof detail === 'string' ? detail : JSON.stringify(detail);
 			} else {
